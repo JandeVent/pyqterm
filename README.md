@@ -9,11 +9,11 @@ model, PTY layer, renderer — with xterm.js as a behavioral reference,
 not a code source. The result is a terminal you
 can actually type into: `python -m pyqtermx` spawns your shell.
 
-![A live screen capture of a pyqtermx session](screenshot/screen-capture.gif)
+![A live screen capture of a pyqtermx session](https://raw.githubusercontent.com/JandeVent/pyqtermx/main/screenshot/screen-capture.gif)
 
 ## Screenshots
 
-![pyqtermx rendering a neofetch-style Arch Linux screen](screenshot/pyqtermx-neofetch.png)
+![pyqtermx rendering a neofetch-style Arch Linux screen](https://raw.githubusercontent.com/JandeVent/pyqtermx/main/screenshot/pyqtermx-neofetch.png)
 
 A neofetch-style snapshot rendered entirely by pyqtermx's own pipeline —
 parser → emulator → screen → renderer — with the feature set as the
