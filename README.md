@@ -211,3 +211,8 @@ python bench/run.py         # perf harness (see bench/results/baseline.json)
 - `ROADMAP.md` — phase-by-phase implementation plan
 - `docs/adr/` — architectural decision records
 - `references/` — pyte and xterm.js vendored as behavioral references
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+Copyright (c) 2018-2026 Connet Information Technology Company, Shanghai.
