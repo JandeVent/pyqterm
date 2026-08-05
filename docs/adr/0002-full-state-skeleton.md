@@ -1,0 +1,3 @@
+# Full VT500 state table wired at Step 1
+
+The parser ships the **complete ECMA-48 state skeleton** (GROUND, ESCAPE, ESCAPE_INTERMEDIATE, CSI_ENTRY/PARAM/INTERMEDIATE/IGNORE, CHARSET, OSC_STRING, DCS_ENTRY/PARAM/INTERMEDIATE/PASS/PUT/IGNORE, APC/SOS/PM) from day one, ported from vt100.net's VT500 transition table as used by xterm.js — even though only CSI, ESC, CHARSET, and OSC get real handlers initially. DCS/APC/SOS/PM **parse-and-ignore**: consumed correctly until ST so the stream never desyncs. The alternative — adding states later — means revisiting every transition edge and risking silent desync bugs (tmux and powerline setups emit DCS). The table costs ~30 lines at Step 1 and defers only *dispatch*, never *parsing*.

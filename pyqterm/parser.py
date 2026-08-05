@@ -1,0 +1,83 @@
+"""A stream parser for ECMA-48 / VT terminal input: code points in, dispatcher calls out.
+
+This module wraps the Cython C extension (pyqterm._parser) which compiles the
+state machine inner loop to native code for maximum performance while
+maintaining full API compatibility with the original pure-Python design.
+
+    bytes → UTF-8 decoder → code points → state machine → dispatcher calls
+"""
+
+from pyqterm._parser import (
+    Parser,
+    ParserState,
+    Action,
+    in_range,
+    ASCII_PRINTABLE,
+    UNICODE_PRINTABLE,
+    ESC_CHARACTER,
+    DEL_CHARACTER,
+    CAN_CHARACTER,
+    SUB_CHARACTER,
+    BEL_CHARACTER,
+    CSI_FINAL_CHARACTERS,
+    INTERMEDIATE_CHARACTERS,
+    CSI_PARAMETER_CHARACTERS,
+    CSI_PARAMETER_DATA_CHARACTERS,
+    CSI_DIGIT_CHARACTERS,
+    CSI_SUBPARAMETER_SEPARATOR,
+    CSI_PARAMETER_SEPARATOR,
+    CSI_PRIVATE_PREFIX_CHARACTERS,
+    CSI_PREFINAL_CHARACTERS,
+    ESC_FINAL_CHARACTERS,
+    CHARSET_DESIGNATORS,
+    C1_EXECUTE_RANGES,
+    C1_DCS,
+    C1_SOS,
+    C1_CAN,
+    C1_SUB,
+    C1_CSI,
+    C1_ST,
+    C1_OSC,
+    C1_PM,
+    C1_APC,
+    UNICODE_MAX_CODE_POINT,
+    C0_EXECUTABLE_RANGES,
+)
+
+__all__ = [
+    "Parser",
+    "ParserState",
+    "Action",
+    "in_range",
+    # Character classification constants used by other modules/tests.
+    "ASCII_PRINTABLE",
+    "UNICODE_PRINTABLE",
+    "ESC_CHARACTER",
+    "DEL_CHARACTER",
+    "CAN_CHARACTER",
+    "SUB_CHARACTER",
+    "BEL_CHARACTER",
+    "CSI_FINAL_CHARACTERS",
+    "INTERMEDIATE_CHARACTERS",
+    "CSI_PARAMETER_CHARACTERS",
+    "CSI_PARAMETER_DATA_CHARACTERS",
+    "CSI_DIGIT_CHARACTERS",
+    "CSI_SUBPARAMETER_SEPARATOR",
+    "CSI_PARAMETER_SEPARATOR",
+    "CSI_PRIVATE_PREFIX_CHARACTERS",
+    "CSI_PREFINAL_CHARACTERS",
+    "ESC_FINAL_CHARACTERS",
+    "CHARSET_DESIGNATORS",
+    "C1_EXECUTE_RANGES",
+    "C1_DCS",
+    "C1_SOS",
+    "C1_CAN",
+    "C1_SUB",
+    "C1_CSI",
+    "C1_ST",
+    "C1_OSC",
+    "C1_PM",
+    "C1_APC",
+    "UNICODE_MAX_CODE_POINT",
+    "C0_EXECUTABLE_RANGES",
+]

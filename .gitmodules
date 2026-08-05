@@ -1,0 +1,8 @@
+[submodule "references/xterm.js"]
+	path = references/xterm.js
+	url = https://github.com/xtermjs/xterm.js.git
+	shallow = true
+[submodule "references/pyte"]
+	path = references/pyte
+	url = https://github.com/selectel/pyte.git
+	shallow = true

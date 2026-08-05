@@ -1,0 +1,20 @@
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.venv/
+.idea/
+.tmp/
+*.egg-info/
+dist/
+build/
+
+# Compiled extensions (built during install)
+pyqterm/*.so
+pyqterm/*.dylib
+pyqterm/*.pyd
+pyqterm/parser.c
+pyqterm/_screen_fast.c
+pyqterm/_render_fast.c

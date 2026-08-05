@@ -1,0 +1,11 @@
+{
+  "env": {
+    "platform": "macOS-15.6-arm64-arm-64bit",
+    "python": "3.11.4",
+    "pyqt": "6.11.0"
+  },
+  "workloads": {
+    "htop": 0.6368562491843477,
+    "donut_fullscreen": 2.292179149420311
+  }
+}
