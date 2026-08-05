@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Phase 4 — Keyboard modes `?1` (DECCKM) and `?2004` (bracketed paste).
 
 The DEC private mode registry stores any private number generically; the

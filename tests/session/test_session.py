@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Phase 4 — Reader thread, command queue & snapshots (ADR-0005).
 
 The seam: `Session` (reader thread as the single writer) driven two

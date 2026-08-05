@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Live truecolor test card — run it *inside* the terminal.
 
     python bench/truecolor.py      # fit the rainbow/gradients to the window

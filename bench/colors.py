@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Visualize the xterm-256 palette and truecolor rendering end to end.
 
 Builds a color test card as escape sequences and feeds it through the

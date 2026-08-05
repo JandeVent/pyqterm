@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T08 — snapshot → pixels: the renderer paints frozen snapshot rows
 into a QImage backing store. Pure Qt (offscreen): assertions read pixel
 colors at cell positions — the widget blits the same image untouched.

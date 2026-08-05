@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Mouse selection — the pure model the widget drives (click → word →
 line, drag extend, rectangular, and the copy text extraction). Qt-free:
 rows are the frozen snapshot `Row`/`Cell` objects, selection coordinates

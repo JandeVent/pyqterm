@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Snapshot → pixels (Slice B). The renderer paints viewport rows into a
 QImage backing store the widget blits in paintEvent; it never touches
 the model — it consumes only frozen `Snapshot` rows (ADR-0005).

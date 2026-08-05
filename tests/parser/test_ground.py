@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T1 — Ground dispatch: printable text and C0 controls flow to the handler.
 
 The seam: the dispatcher protocol. Tests observe behavior through a recorder

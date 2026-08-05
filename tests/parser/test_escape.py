@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T3 — ESC sequences + charset designation.
 
 The seam: the dispatcher protocol, observed through a recorder (tests/recorder.py).

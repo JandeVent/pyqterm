@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T03 — The first behavioral consumers of the mode registry.
 
 DECAWM off (?7 l): printing at the last column overwrites in place, a

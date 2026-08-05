@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T02 — alternate screen (?47/?1047/?1048/?1049) — ADR-0004.
 
 The semantics are xterm.js-verbatim; the first five tests are ported

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Slice B GUI tests run headless: force the offscreen platform before
 Qt is initialized (process-wide — the non-GUI tests don't care), and
 ensure a QApplication exists for every test (QFontMetrics, clipboard)."""

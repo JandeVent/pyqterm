@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T01 — Rows carry the wrapped marker (xterm.js isWrapped).
 
 The marker rides on the row a wrap lands on, is cleared by an explicit

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """The emulator — turns parse events into screen operations.
 
 Implements the dispatcher protocol (pyqtermx.dispatcher.Dispatcher), the

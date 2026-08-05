@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Input encoding — QKeyEvent → terminal bytes (Slice B, spec Q8).
 
 The GUI layer's input path, unit-tested with synthetic QKeyEvents. Pure:

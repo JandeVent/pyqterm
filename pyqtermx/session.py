@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """The session — reader thread, command queue, snapshots (ADR-0005).
 
 The single writer of terminal state. A dedicated reader thread owns the

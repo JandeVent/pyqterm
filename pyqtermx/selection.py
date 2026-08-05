@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Mouse selection — the pure model behind click/drag selection.
 
 Selection coordinates are *viewport* rows and columns (what the GUI can

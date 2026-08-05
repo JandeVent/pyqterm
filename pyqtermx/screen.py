@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """The screen model — the dumb grid the renderer reads.
 
 The screen owns the display grid (cells), the cursor, and the scroll

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T10 — DECSC/DECRC: a single save slot for the cursor (position +
 rendition), the charset slots and active level, and the origin/wraparound
 modes. CSI `s`/`u` are aliases. Tab stops and the scroll region are not

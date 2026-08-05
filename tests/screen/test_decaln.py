@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T03 — DECALN (`ESC # 8`) — screen alignment test.
 
 The screen is filled with `E` in the cursor's *full current rendition*

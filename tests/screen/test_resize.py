@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T06 — Resize reflow: re-wrapping lines at a new width (ADR-0003).
 
 The seam: the screen's read API. `resize(lines, cols)` re-wraps every

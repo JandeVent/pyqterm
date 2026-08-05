@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Typed CSI parameters, shaped like xterm.js's ``Params``.
 
 Parsing only, never interpretation: values are stored as integers (empty

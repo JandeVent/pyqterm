@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Phase 4 — Scrollback & retention (ADR-0006).
 
 History rows live on the normal screen above the grid; only full-screen

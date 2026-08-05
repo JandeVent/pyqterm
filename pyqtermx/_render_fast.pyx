@@ -1,4 +1,6 @@
 # cython: language_level=3, boundscheck=False, wraparound=False
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Cython fast path for TerminalRenderer._paint_row() — the per-cell loop.
 
 The paint profile showed ~67% of paint time in the Python per-cell loop

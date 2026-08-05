@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Phase 5 — Windows pty (ADR-0007): the WinPty wrapper over pywinpty's
 ConPTY, pinned to the same contract as `pyqtermx.ptyspawn.Pty`.
 

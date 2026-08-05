@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 import os
 from setuptools import Extension, find_packages, setup
 from Cython.Build import cythonize

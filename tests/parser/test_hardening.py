@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T6 — Hardening: streaming invariance and the no-crash guarantee.
 
 Two load-bearing properties, exhaustive:

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T3 — Minimal SGR subset in the emulator.
 
 The seam: the dispatcher protocol. `csi_dispatch` with final `m` sets the

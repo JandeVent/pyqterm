@@ -1,4 +1,6 @@
 # cython: language_level=3, boundscheck=False, wraparound=False
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Cython fast path for Screen.print() — the inner character loop.
 
 The hot path processes millions of characters per second. Moving the loop

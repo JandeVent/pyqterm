@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T02 — Mode registry (ANSI + DEC-private namespaces) and its setters.
 
 SM/RM (CSI n h/l) and DECSET/DECRST (CSI ? n h/l) each collapse to one

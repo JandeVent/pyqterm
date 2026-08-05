@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """The pty layer — Qt-free (ADR-0005).
 
 A narrow `Pty` interface: spawn a child with its own session (setsid),

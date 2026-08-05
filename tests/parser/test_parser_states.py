@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """P0 — parser state machine, ported from xterm.js EscapeSequenceParser.test.ts.
 
 Reference: references/xterm.js/src/common/parser/EscapeSequenceParser.test.ts.

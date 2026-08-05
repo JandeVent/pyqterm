@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T07 — xterm escape-sequence fixture conformance via the Session pipeline.
 
 Vendored from xterm.js (`fixtures/escape_sequence_files`): `.in`/`.text`

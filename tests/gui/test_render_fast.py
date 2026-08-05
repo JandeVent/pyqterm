@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Fast-path render parity: the Cython `_render_fast` run collector
 must paint pixel-identical output to the pure-Python `_paint_row`
 fallback. The extension is the production path; the fallback is the

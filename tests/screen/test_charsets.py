@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T8 — Charset designation and level shifts.
 
 The screen owns four slots G0–G3 plus the active level (glossary

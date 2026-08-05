@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T04 — Scroll region (DECSTBM) with xterm.js semantics.
 
 `CSI n;m r` clamps both bounds, ignores a region whose bottom is not

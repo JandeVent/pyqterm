@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """The terminal widgets (Slice B) — render snapshots and encode keys,
 and nothing else.
 

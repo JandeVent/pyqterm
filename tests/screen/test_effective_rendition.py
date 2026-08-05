@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T04 — `?5` (DECSCNM, reverse video) via the `effective_rendition`
 seam — the one new seam of Phase 3.
 

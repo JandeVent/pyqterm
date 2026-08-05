@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Phase 4 — Input encoding (Slice B, Q8): QKeyEvent → terminal bytes.
 
 The seam: the pure `encode_key(event, ...)` module, unit-tested with

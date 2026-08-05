@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """The dispatcher protocol — the seam between parser and terminal state.
 
 The parser owns parsing; a dispatcher owns semantics. The screen (later) and

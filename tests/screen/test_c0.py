@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T2 — C0 controls and full-screen scroll.
 
 The seam: the dispatcher protocol (parser → emulator) and the screen's

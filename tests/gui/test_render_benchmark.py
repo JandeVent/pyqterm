@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Render benchmark unittest — the paint path's regression guard.
 
 Measures the rasterize cost of two workloads through the same seam as

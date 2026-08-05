@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """A stream parser for ECMA-48 / VT terminal input: code points in, dispatcher calls out.
 
 This module wraps the Cython C extension (pyqtermx._parser) which compiles the

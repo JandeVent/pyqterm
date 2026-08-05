@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """The runnable terminal (`python -m pyqtermx`) — thin glue: pty +
 session + widget in a window. All behavior lives in the tested layers;
 this module only wires them together.

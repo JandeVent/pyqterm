@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Emulator-level dispatch completeness (spec line 96).
 
 Every entry in the CSI dispatch table must resolve to an existing handler

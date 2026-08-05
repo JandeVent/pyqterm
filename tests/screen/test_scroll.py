@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T11 — Scrolling and row ops: SU/SD scroll the region; IL/DL insert and
 delete lines; ICH/DCH insert and delete characters.
 

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T06 — Erase: ED (CSI n J), EL (CSI n K), ECH (CSI n X).
 
 Erase fill = default foreground, the cursor's current background, no

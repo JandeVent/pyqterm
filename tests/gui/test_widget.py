@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T08 — the widget end-to-end (offscreen): snapshots → pixels, keys →
 bytes, viewport scrolling, paste, resize debounce. The GUI never reads
 the model — assertions use the fake pty's `sent` bytes and winsizes,

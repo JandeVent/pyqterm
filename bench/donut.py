@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Render a 3D spinning ASCII donut (torus) in the terminal.
 
 A pure-stdlib port of Andy Sloane's classic "donut" animation

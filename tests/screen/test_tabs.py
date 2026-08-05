@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T9 — Tab stops: a set seeded every 8, mutable via HTS/TBC, consulted
 by HT, navigated by CHT/CBT, reset to defaults by resize (spec line 80).
 """

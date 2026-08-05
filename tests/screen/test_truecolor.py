@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T05 — truecolor (SGR 38;2 / 48;2) — ADR-0004.
 
 Colors are ints: `-1` default, `0–255` the 256-color palette, and

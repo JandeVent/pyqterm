@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T4 — Deferred wrap (the pending-wrap flag).
 
 The seam: the screen's read API. Printing in the last column sets the

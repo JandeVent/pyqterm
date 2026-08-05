@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """Shared test seam: a recorder handler implementing the dispatcher protocol."""
 
 from __future__ import annotations

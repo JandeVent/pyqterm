@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T09 — the runnable app: `python -m pyqtermx` wires pty + session +
 widget into a window. Smoke test: the window builds, the session runs
 and delivers snapshots to the widget (offscreen)."""

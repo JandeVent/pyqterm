@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T5 — Width-aware print: wide characters and combining marks.
 
 The seam: the screen's read API. A wide character (CJK, wcwidth 2) fills

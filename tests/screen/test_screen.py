@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T1 — Dumb screen tracer bullet: printable text lands in the grid.
 
 The seam: the dispatcher protocol (parser → emulator) plus the screen's

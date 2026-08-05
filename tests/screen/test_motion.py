@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2026 Connet Information Technology Company, Shanghai.
 """T05 — Cursor motion and addressing (clamp, not scroll).
 
 CUU/CUD clamp at the region top/bottom when the cursor is inside the
