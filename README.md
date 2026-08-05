@@ -118,12 +118,11 @@ Requires Python ≥ 3.11 on a POSIX platform. Recommended setup:
 python -m venv .venv
 source .venv/bin/activate
 
-pip install -e ".[dev]"   # project + wcwidth + pytest/mypy
-pip install PyQt6         # runtime dependency (not yet declared in pyproject.toml)
+pip install -e ".[dev]"   # project + PyQt6/wcwidth + pytest/pytest-qt/mypy
 ```
 
-PyQt6 ships prebuilt wheels for macOS, Windows, and Linux; it is
-installed separately until it is declared as a project dependency.
+PyQt6 ships prebuilt wheels for macOS, Windows, and Linux and is declared
+as a project dependency.
 
 ## Run
 
