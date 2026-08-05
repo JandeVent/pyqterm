@@ -13,7 +13,7 @@ no-op.
 
 from __future__ import annotations
 
-from pyqterm.screen import DECAWM, DECOM, IRM, NLM
+from pyqtermx.screen import DECAWM, DECOM, IRM, NLM
 from tests.screen.test_screen import feed_to
 
 

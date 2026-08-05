@@ -16,11 +16,11 @@ import pytest
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPainter
 
-import pyqterm.render as render_mod
-from pyqterm.render import TerminalRenderer
-from pyqterm.screen import Cell, Row, rgb
-from pyqterm.selection import Selection
-from pyqterm.session import Snapshot
+import pyqtermx.render as render_mod
+from pyqtermx.render import TerminalRenderer
+from pyqtermx.screen import Cell, Row, rgb
+from pyqtermx.selection import Selection
+from pyqtermx.session import Snapshot
 
 
 def make_snapshot(*, reverse_video: bool = False) -> Snapshot:
@@ -107,7 +107,7 @@ def test_fast_matches_fallback_selection(
 def test_collect_runs_bright_step_and_swap() -> None:
     """The pure collector folds bold-is-bright into the fg int and
     applies the SGR 7 fg/bg swap — the two C-only behaviors."""
-    rf = pytest.importorskip("pyqterm._render_fast")
+    rf = pytest.importorskip("pyqtermx._render_fast")
     row = Row([Cell("A", 5, 0, bold=True), Cell("B", 12, 0, reverse=True)])
     glyphs = [r for r in rf.collect_runs(row, False, None) if r[0] == 1]
     assert glyphs[0][3] == 13  # bold fg 5 → bright 13

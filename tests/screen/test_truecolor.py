@@ -6,7 +6,7 @@ A truncated `38;2` / `48;2` (missing components) is ignored; values
 over 255 clamp to 255 (documented deviation).
 """
 
-from pyqterm.screen import Cell, Screen, is_rgb, rgb, rgb_parts
+from pyqtermx.screen import Cell, Screen, is_rgb, rgb, rgb_parts
 
 from tests.screen.test_screen import feed_to
 

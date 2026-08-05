@@ -49,8 +49,8 @@ from PyQt6.QtCore import PYQT_VERSION_STR, Qt  # noqa: E402
 from PyQt6.QtGui import QColor, QImage, QPainter  # noqa: E402
 from PyQt6.QtWidgets import QApplication  # noqa: E402
 
-from pyqterm.render import TerminalRenderer  # noqa: E402
-from pyqterm.session import Session  # noqa: E402
+from pyqtermx.render import TerminalRenderer  # noqa: E402
+from pyqtermx.session import Session  # noqa: E402
 
 from frames import htop_frames  # noqa: E402
 

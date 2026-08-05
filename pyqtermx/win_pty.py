@@ -1,7 +1,7 @@
 """The Windows pty layer — Qt-free, ConPTY-backed (ADR-0007).
 
 A `WinPty` implements the same narrow interface as
-`pyqterm.ptyspawn.Pty` (ADR-0005): spawn a child behind a real
+`pyqtermx.ptyspawn.Pty` (ADR-0005): spawn a child behind a real
 pseudo-terminal, exchange bytes, set the window size, and reap the
 exit. The child lives in a ConPTY created by pywinpty (the Rust
 winpty-rs wrapper); pywinpty's PtyProcess already pumps the ConPTY
@@ -81,7 +81,7 @@ else:
 class WinPty:
     """A ConPTY pseudo-terminal pair with a spawned child.
 
-    The Windows sibling of `pyqterm.ptyspawn.Pty` (ADR-0005):
+    The Windows sibling of `pyqtermx.ptyspawn.Pty` (ADR-0005):
     construct to spawn, exchange bytes through `read`/`send_data`,
     resize with `set_window_size`, poll the exit with
     `is_running`/`wait`, and `close`. Qt-free.

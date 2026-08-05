@@ -1,5 +1,5 @@
 include README.md LICENSE
-recursive-include pyqterm *.pyx *.pxd
+recursive-include pyqtermx *.pyx *.pxd
 recursive-include tests *.py
 global-exclude *.pyc *.pyo __pycache__
 global-exclude *.so *.dylib *.pyd

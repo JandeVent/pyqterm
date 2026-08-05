@@ -1,4 +1,4 @@
-# pyqterm — Implementation Roadmap
+# pyqtermx — Implementation Roadmap
 
 Build a terminal emulator compatible with **ECMA-48**, **VT102**, and **xterm** (de facto modern standard), one testable milestone at a time.
 
@@ -72,7 +72,7 @@ Complete: 441 tests green, milestone fixture t0081-vim-session passing.
 ### Phase 4 — PTY + scrollback + GUI (was Steps 10–11) 🚧 in progress
 The point where the pipeline becomes a terminal. Scrollback moves here from the old Step 4 — it is invisible until a GUI exists, and it needs the wrapped-row flag from Phase 2. Design locked in the grilling session (ADR-0005, ADR-0006).
 
-- **Slice A (headless)**: `pyqterm/pty.py` — fork + setsid, Qt-free `Pty` interface; a reader thread as the **single writer** (command queue for send/resize/scroll/close, snapshot signals — ADR-0005); scrollback on the screen: history rows above the grid, one-stream reflow, xterm retention (full-screen scroll only, bounded 1000, alt excluded), ED3, viewport API (ADR-0006). Tested with fake child programs in pytest.
+- **Slice A (headless)**: `pyqtermx/pty.py` — fork + setsid, Qt-free `Pty` interface; a reader thread as the **single writer** (command queue for send/resize/scroll/close, snapshot signals — ADR-0005); scrollback on the screen: history rows above the grid, one-stream reflow, xterm retention (full-screen scroll only, bounded 1000, alt excluded), ED3, viewport API (ADR-0006). Tested with fake child programs in pytest.
 - **Slice B (PyQt6)**: custom QPainter `TerminalView` (cell metrics, wide/combining chars, inverse block cursor), dirty-line snapshot repaint, bold-as-bright (ADR-0004 §9); `encode_key` input path (DECCKM `?1`, bracketed paste `?2004`, modifier encoding, PgUp/PgDn viewport policy); debounced resize → reflow → TIOCSWINSZ; QScrollBar; single-window app shell, `$SHELL` + `TERM=xterm-256color`, SIGTERM + waitpid on close.
 
 Reference: xterm.js ships no renderer sources.

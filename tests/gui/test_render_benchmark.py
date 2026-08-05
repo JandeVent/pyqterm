@@ -29,8 +29,8 @@ import pytest
 from PyQt6.QtCore import PYQT_VERSION_STR
 from PyQt6.QtGui import QImage, QPainter
 
-from pyqterm.render import DEFAULT_BG, TerminalRenderer
-from pyqterm.session import Session
+from pyqtermx.render import DEFAULT_BG, TerminalRenderer
+from pyqtermx.session import Session
 
 # bench/ has no package __init__ — the workloads live there as modules.
 BENCH = Path(__file__).resolve().parent.parent.parent / "bench"

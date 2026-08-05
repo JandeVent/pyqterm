@@ -13,7 +13,7 @@ region rows, so row contents outside the region prove the bounds.
 
 from __future__ import annotations
 
-from pyqterm.screen import DECOM
+from pyqtermx.screen import DECOM
 from tests.screen.test_screen import feed_to
 
 

@@ -118,7 +118,7 @@ class Session:
         self._last_modes = (False, False, False, False, False, False)
         self._last_reverse = False
         self._last_cursor_visible = True
-        self._thread = threading.Thread(target=self._run, name="pyqterm-reader", daemon=True)
+        self._thread = threading.Thread(target=self._run, name="pyqtermx-reader", daemon=True)
 
     # -- Command API (any thread) ---------------------------------------
 

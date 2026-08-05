@@ -15,7 +15,7 @@ describe block) through the feed seam. What the tests pin:
 - resize reflows both grids under ADR-0003.
 """
 
-from pyqterm.screen import Screen
+from pyqtermx.screen import Screen
 
 from .test_screen import feed_to, make_screen, make_screen
 

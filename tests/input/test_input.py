@@ -19,7 +19,7 @@ import pytest
 from PyQt6.QtCore import QEvent, Qt
 from PyQt6.QtGui import QKeyEvent
 
-from pyqterm.input import (
+from pyqtermx.input import (
     encode_key,
     encode_mouse_x10,
     encode_paste,

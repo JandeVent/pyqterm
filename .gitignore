@@ -12,9 +12,9 @@ dist/
 build/
 
 # Compiled extensions (built during install)
-pyqterm/*.so
-pyqterm/*.dylib
-pyqterm/*.pyd
-pyqterm/parser.c
-pyqterm/_screen_fast.c
-pyqterm/_render_fast.c
+pyqtermx/*.so
+pyqtermx/*.dylib
+pyqtermx/*.pyd
+pyqtermx/parser.c
+pyqtermx/_screen_fast.c
+pyqtermx/_render_fast.c

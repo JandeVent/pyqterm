@@ -19,14 +19,14 @@ import time
 
 import pytest
 
-from pyqterm.ptyspawn import Pty
-from pyqterm.session import Session, Snapshot
+from pyqtermx.ptyspawn import Pty
+from pyqtermx.session import Session, Snapshot
 
 from tests.pty.test_pty import wait_for
 
 
 class FakePty:
-    """A pipe-pair stand-in for `pyqterm.ptyspawn.Pty`: the test writes the
+    """A pipe-pair stand-in for `pyqtermx.ptyspawn.Pty`: the test writes the
     child's "output" to the pipe; everything the session sends lands in
     `sent`; resizes are recorded. read() returns None once closed."""
 

@@ -76,7 +76,7 @@ def test_truncated_csi_waits_for_more_input() -> None:
 def test_csi_spans_feeds() -> None:
     # Chunking mid-sequence must not change the outcome (T6 invariant).
     from tests.recorder import Recorder
-    from pyqterm.parser import Parser
+    from pyqtermx.parser import Parser
 
     recorder = Recorder()
     parser = Parser(recorder)

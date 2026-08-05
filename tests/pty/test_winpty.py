@@ -1,5 +1,5 @@
 """Phase 5 — Windows pty (ADR-0007): the WinPty wrapper over pywinpty's
-ConPTY, pinned to the same contract as `pyqterm.ptyspawn.Pty`.
+ConPTY, pinned to the same contract as `pyqtermx.ptyspawn.Pty`.
 
 Two layers: mock-based tests that run on any platform (a
 `FakeWinPtyProcess` stands in for pywinpty, so the wrapper's contract —
@@ -18,8 +18,8 @@ import time
 
 import pytest
 
-from pyqterm.session import Session
-from pyqterm.win_pty import WinPty
+from pyqtermx.session import Session
+from pyqtermx.win_pty import WinPty
 
 from tests.pty.test_pty import wait_for
 
@@ -83,7 +83,7 @@ class FakeWinPtyProcess:
 @pytest.fixture
 def fake_backend(monkeypatch) -> type[FakeWinPtyProcess]:
     """Install the fake pywinpty and return its class."""
-    monkeypatch.setattr("pyqterm.win_pty._WinPtyProcess", FakeWinPtyProcess)
+    monkeypatch.setattr("pyqtermx.win_pty._WinPtyProcess", FakeWinPtyProcess)
     return FakeWinPtyProcess
 
 
@@ -125,7 +125,7 @@ def test_spawn_failure_reports_127(monkeypatch) -> None:
         def spawn(cls, argv, cwd=None, env=None, dimensions=None):
             raise FileNotFoundError("no such program")
 
-    monkeypatch.setattr("pyqterm.win_pty._WinPtyProcess", FailingSpawn)
+    monkeypatch.setattr("pyqtermx.win_pty._WinPtyProcess", FailingSpawn)
     pty = WinPty(["missing.exe"])
     assert not pty.is_running()
     assert pty.wait() == 127  # the Unix exec-failure exit code
@@ -194,7 +194,7 @@ def test_wait_is_none_while_running_then_exit_status(fake_backend) -> None:
 def test_signal_maps_to_terminate_process(monkeypatch, fake_backend) -> None:
     pty, _ = spawn_fake(fake_backend, ["prog.exe"])
     killed: list[tuple[int, int]] = []
-    monkeypatch.setattr("pyqterm.win_pty.os.kill", lambda pid, sig: killed.append((pid, sig)))
+    monkeypatch.setattr("pyqtermx.win_pty.os.kill", lambda pid, sig: killed.append((pid, sig)))
     pty.signal(signal.SIGTERM)
     assert killed == [(4242, signal.SIGTERM)]
     pty.signal(signal.SIGINT)  # no POSIX signals on Windows — no-op
@@ -221,7 +221,7 @@ def test_close_escalates_when_child_stubborn(monkeypatch, fake_backend) -> None:
             self._exitstatus = 1
             return True
 
-    monkeypatch.setattr("pyqterm.win_pty._WinPtyProcess", StubbornFake)
+    monkeypatch.setattr("pyqtermx.win_pty._WinPtyProcess", StubbornFake)
     pty = WinPty(["stubborn.exe"])
     assert pty._pty is not None
     stubborn = pty._pty
@@ -249,7 +249,7 @@ def test_failed_spawn_ends_session_loop_cleanly(monkeypatch) -> None:
         def spawn(cls, argv, cwd=None, env=None, dimensions=None):
             raise FileNotFoundError("no such program")
 
-    monkeypatch.setattr("pyqterm.win_pty._WinPtyProcess", FailingSpawn)
+    monkeypatch.setattr("pyqtermx.win_pty._WinPtyProcess", FailingSpawn)
     pty = WinPty(["missing.exe"])
     session = Session(pty, lines=5, columns=20)
     session.start()

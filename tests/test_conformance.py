@@ -29,8 +29,8 @@ import time
 
 import pytest
 
-from pyqterm.ptyspawn import Pty
-from pyqterm.session import Session
+from pyqtermx.ptyspawn import Pty
+from pyqtermx.session import Session
 
 from tests.pty.test_pty import wait_for
 from tests.session.test_session import FakePty

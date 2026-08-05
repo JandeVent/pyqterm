@@ -7,9 +7,9 @@ read API (line(y), render()). Tests drive the full pipeline
 
 from __future__ import annotations
 
-from pyqterm.emulator import Emulator
-from pyqterm.parser import Parser
-from pyqterm.screen import Cell, Screen
+from pyqtermx.emulator import Emulator
+from pyqtermx.parser import Parser
+from pyqtermx.screen import Cell, Screen
 
 
 def make_screen(lines: int = 24, columns: int = 80) -> tuple[Parser, Emulator, Screen]:

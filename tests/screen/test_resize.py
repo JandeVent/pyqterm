@@ -7,7 +7,7 @@ drops the top lines, keeping the newest content.
 
 from __future__ import annotations
 
-from pyqterm.screen import Cell
+from pyqtermx.screen import Cell
 
 from tests.screen.test_screen import feed_to
 

@@ -4,8 +4,8 @@ Reference: references/xterm.js/src/common/parser/EscapeSequenceParser.test.ts.
 That suite drives the parser one code point at a time from a chosen state and
 asserts the resulting state, collected buffers, and dispatcher calls.
 
-pyqterm's table (parser.py Part 4) is a transcription of the same VT500
-table, so the reference assertions port 1:1 except where pyqterm
+pyqtermx's table (parser.py Part 4) is a transcription of the same VT500
+table, so the reference assertions port 1:1 except where pyqtermx
 deliberately differs — each divergence is noted inline:
 
 - DCS is parsed but never dispatched at Step 1 (ADR-0002): the final byte
@@ -14,7 +14,7 @@ deliberately differs — each divergence is noted inline:
   end it with plain IGNORE (no execute, no escape restart) — so the byte
   after an ESC terminator parses in GROUND, and the '\' of a two-byte ST
   prints as text (xterm.js resumes at ESCAPE and swallows it).
-- OSC abort (CAN/SUB) silently discards the payload — pyqterm has no
+- OSC abort (CAN/SUB) silently discards the payload — pyqtermx has no
   success flag to dispatch. OSC_END on an empty buffer dispatches "".
 - CSI_INTERMEDIATE and CSI_IGNORE have no C0-execute rules: a C0 control
   falls to the default (IGNORE → GROUND) instead of executing in place.
@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import pytest
 
-from pyqterm.parser import Parser, ParserState
+from pyqtermx.parser import Parser, ParserState
 from tests.recorder import Recorder, feed
 
 # xterm.js EXECUTABLES: 0x00–0x17, 0x19, 0x1C–0x1F (CAN/SUB/ESC excluded).
@@ -37,7 +37,7 @@ _C1_EXECUTE = list(range(0x80, 0x90)) + list(range(0x91, 0x98)) + [0x99, 0x9A]
 
 
 class Probe(Parser):
-    """Parser subclass exposing internals — the pyqterm analogue of
+    """Parser subclass exposing internals — the pyqtermx analogue of
     xterm.js's TestEscapeSequenceParser."""
 
     def __init__(self) -> None:
@@ -250,7 +250,7 @@ class TestEscapeState:
 
     def test_esc_backslash_dispatches(self) -> None:
         # Divergence: xterm.js registers a swallowing handler for ESC \;
-        # pyqterm dispatches it as an ordinary escape sequence.
+        # pyqtermx dispatches it as an ordinary escape sequence.
         assert feed("\x1b\\") == [("escape_dispatch", "", "\\")]
 
     def test_intermediates_collect_to_escape_intermediate(self) -> None:
@@ -308,7 +308,7 @@ class TestEscapeIntermediateState:
 
 
 # ---------------------------------------------------------------------------
-# CHARSET (pyqterm-specific state; xterm.js folds it into ESCAPE_INTERMEDIATE)
+# CHARSET (pyqtermx-specific state; xterm.js folds it into ESCAPE_INTERMEDIATE)
 # ---------------------------------------------------------------------------
 
 
@@ -450,13 +450,13 @@ class TestCsiIntermediateState:
 
     def test_del_falls_to_default(self) -> None:
         # Divergence: xterm.js ignores DEL and stays in CSI_INTERMEDIATE;
-        # pyqterm's table has no DEL rule here → default (IGNORE → GROUND).
+        # pyqtermx's table has no DEL rule here → default (IGNORE → GROUND).
         probe = feed_from(ParserState.CSI_INTERMEDIATE, "\x7f")
         assert probe.state is ParserState.GROUND
         assert probe.events == []
 
     def test_c0_falls_to_default(self) -> None:
-        # Divergence: xterm.js executes C0 here and stays; pyqterm's table
+        # Divergence: xterm.js executes C0 here and stays; pyqtermx's table
         # has no C0 rules in CSI_INTERMEDIATE → default (IGNORE → GROUND).
         for code in _EXECUTABLES:
             probe = feed_from(ParserState.CSI_INTERMEDIATE, chr(code))
@@ -553,12 +553,12 @@ class TestOscStringState:
 
     def test_empty_osc_dispatches_empty(self) -> None:
         # Divergence: xterm.js suppresses the call for an empty payload;
-        # pyqterm's OSC_END always dispatches, even with nothing collected.
+        # pyqtermx's OSC_END always dispatches, even with nothing collected.
         assert feed("\x9d\x9c") == [("osc_dispatch", "")]
 
 
 # ---------------------------------------------------------------------------
-# DCS_* (xterm.js: 'state DCS_*'; pyqterm never dispatches DCS — Step 1)
+# DCS_* (xterm.js: 'state DCS_*'; pyqtermx never dispatches DCS — Step 1)
 # ---------------------------------------------------------------------------
 
 
@@ -587,7 +587,7 @@ class TestDcsEntryState:
             assert probe.intermediates == chr(code)
 
     def test_final_enters_ignore(self) -> None:
-        # Divergence: xterm.js hooks DCS here; Step 1 pyqterm swallows it.
+        # Divergence: xterm.js hooks DCS here; Step 1 pyqtermx swallows it.
         for code in range(0x40, 0x7F):
             probe = feed_from(ParserState.DCS_ENTRY, chr(code))
             assert probe.state is ParserState.DCS_IGNORE
@@ -613,7 +613,7 @@ class TestDcsParamState:
 
     def test_private_prefix_stays_in_param(self) -> None:
         # Divergence: xterm.js sends a second prefix byte to DCS_IGNORE;
-        # pyqterm's DCS_PARAM treats all 0x30–0x3F identically.
+        # pyqtermx's DCS_PARAM treats all 0x30–0x3F identically.
         for code in range(0x3C, 0x40):
             probe = feed_from(ParserState.DCS_PARAM, chr(code))
             assert probe.state is ParserState.DCS_PARAM
@@ -688,7 +688,7 @@ class TestSosPmStringState:
 
 
 # ---------------------------------------------------------------------------
-# APC_ENTRY (xterm.js: 'state APC_ENTRY *'; pyqterm has no passthrough)
+# APC_ENTRY (xterm.js: 'state APC_ENTRY *'; pyqtermx has no passthrough)
 # ---------------------------------------------------------------------------
 
 
@@ -701,7 +701,7 @@ class TestApcEntryState:
             assert probe.events == [], hex(code)
 
     def test_can_sub_end_without_executing(self) -> None:
-        # Divergence: xterm.js's global CAN/SUB executes here; pyqterm ends
+        # Divergence: xterm.js's global CAN/SUB executes here; pyqtermx ends
         # the string with plain IGNORE (no execute, no restart).
         for code in (0x18, 0x1A):
             probe = feed_from(ParserState.APC_ENTRY, chr(code))
@@ -759,7 +759,7 @@ class TestEscapeSequenceExamples:
         assert feed("abc\x9fAbc;de\x9cxyz") == [("chars", "abc"), ("chars", "xyz")]
 
     def test_print_plus_apc_c0_plus_print(self) -> None:
-        # Divergence: pyqterm ends the APC at ESC with plain IGNORE, leaving
+        # Divergence: pyqtermx ends the APC at ESC with plain IGNORE, leaving
         # the '\' of the two-byte ST to print in GROUND (xterm.js resumes at
         # ESCAPE, where the '\' is swallowed).
         assert feed("abc\x1b_Abc;de\x1b\\xyz") == [("chars", "abc"), ("chars", "\\xyz")]
@@ -802,7 +802,7 @@ class TestEscapeSequenceExamples:
 
 class TestCoverage:
     def test_unicode_in_csi_ignore_falls_to_default(self) -> None:
-        # Divergence: xterm.js ignores and stays in CSI_IGNORE; pyqterm's
+        # Divergence: xterm.js ignores and stays in CSI_IGNORE; pyqtermx's
         # default resyncs to GROUND.
         probe = feed_from(ParserState.CSI_IGNORE, "€")
         assert probe.state is ParserState.GROUND

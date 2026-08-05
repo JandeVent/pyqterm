@@ -27,11 +27,11 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtWidgets import QApplication
 
-from pyqterm.render import DEFAULT_BG, DEFAULT_FG
-from pyqterm.screen import Cell, Row
-from pyqterm.selection import Selection
-from pyqterm.session import Session, Snapshot
-from pyqterm.widget import TerminalWidget, merge_viewport
+from pyqtermx.render import DEFAULT_BG, DEFAULT_FG
+from pyqtermx.screen import Cell, Row
+from pyqtermx.selection import Selection
+from pyqtermx.session import Session, Snapshot
+from pyqtermx.widget import TerminalWidget, merge_viewport
 
 from tests.session.test_session import FakePty, make_session
 
@@ -426,7 +426,7 @@ def test_tab_is_not_swallowed_by_focus_navigation(
 
 
 def _blank_rows(session: Session) -> tuple:
-    from pyqterm.screen import Cell, Row
+    from pyqtermx.screen import Cell, Row
 
     return tuple(Row([Cell.blank() for _ in range(session.columns)]) for _ in range(2))
 

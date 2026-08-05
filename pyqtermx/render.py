@@ -4,7 +4,7 @@ the model — it consumes only frozen `Snapshot` rows (ADR-0005).
 
 Cell colors: `-1` is the default, `0–255` a 256-color palette index
 (0–15 xterm, 16–231 the 6×6×6 cube, 232–255 grayscale), and `>= 0x1000000`
-an RGB value (`pyqterm.screen.rgb`). SGR support here: bold (palette
+an RGB value (`pyqtermx.screen.rgb`). SGR support here: bold (palette
 colors 0–7 step up to their bright entries), reverse (fg/bg swap),
 dim (fg mixed halfway toward bg), underline, strike, overline, hidden
 (no glyph), italic (font flag), and DECSCNM ?5 (whole-screen reverse).
@@ -22,9 +22,9 @@ from collections.abc import Sequence
 from PyQt6.QtCore import QRect, QRectF, Qt
 from PyQt6.QtGui import QColor, QFont, QFontDatabase, QFontMetrics, QImage, QPainter
 
-from pyqterm.screen import Cell, Row, is_rgb, rgb_parts
-from pyqterm.selection import Selection, column_range
-from pyqterm.session import Snapshot
+from pyqtermx.screen import Cell, Row, is_rgb, rgb_parts
+from pyqtermx.selection import Selection, column_range
+from pyqtermx.session import Snapshot
 
 #: xterm's 16 ANSI colors (bright variants in the second half).
 _PALETTE: tuple[int, ...] = (

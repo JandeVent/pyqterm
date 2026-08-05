@@ -18,7 +18,7 @@ import time
 
 import pytest
 
-from pyqterm.ptyspawn import Pty
+from pyqtermx.ptyspawn import Pty
 
 
 def wait_for(predicate, timeout: float = 5.0) -> bool:
@@ -209,7 +209,7 @@ def test_send_data_loops_on_partial_writes(monkeypatch) -> None:
             chunks.append(n)
             return real_write(fd, data[:n])
 
-        monkeypatch.setattr("pyqterm.ptyspawn.os.write", capped_write)
+        monkeypatch.setattr("pyqtermx.ptyspawn.os.write", capped_write)
         pty.send_data(b"z" * 100)
         assert len(chunks) > 1
         assert sum(chunks) == 100
@@ -232,7 +232,7 @@ def test_send_data_retries_on_eagain(monkeypatch) -> None:
                 raise BlockingIOError(errno.EAGAIN, "EAGAIN")
             return real_write(fd, data)
 
-        monkeypatch.setattr("pyqterm.ptyspawn.os.write", flaky_write)
+        monkeypatch.setattr("pyqtermx.ptyspawn.os.write", flaky_write)
         pty.send_data(b"retry-me")
         assert flaked["n"] == 1
     finally:

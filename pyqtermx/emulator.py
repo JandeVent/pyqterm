@@ -1,6 +1,6 @@
 """The emulator — turns parse events into screen operations.
 
-Implements the dispatcher protocol (pyqterm.dispatcher.Dispatcher), the
+Implements the dispatcher protocol (pyqtermx.dispatcher.Dispatcher), the
 seam the parser already defines. The screen is the dumb model; the
 emulator decides what each event means.
 """

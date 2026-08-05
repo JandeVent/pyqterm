@@ -7,7 +7,7 @@ handler (tests/recorder.py), never through parser internals.
 from __future__ import annotations
 
 from tests.recorder import Recorder, feed, feed_bytes
-from pyqterm.parser import Parser
+from pyqtermx.parser import Parser
 
 
 def test_printable_run_is_one_text_event() -> None:

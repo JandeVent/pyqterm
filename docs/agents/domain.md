@@ -20,7 +20,7 @@ Single-context repo:
 │   ├── 0001-code-point-parser.md
 │   ├── 0002-full-state-skeleton.md
 │   └── 0003-reflow-on-resize.md
-└── pyqterm/
+└── pyqtermx/
 ```
 
 ## Language

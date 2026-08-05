@@ -12,9 +12,9 @@ headless, no pty.
 
 from __future__ import annotations
 
-from pyqterm.emulator import Emulator
-from pyqterm.parser import Parser
-from pyqterm.screen import Row, Screen
+from pyqtermx.emulator import Emulator
+from pyqtermx.parser import Parser
+from pyqtermx.screen import Row, Screen
 
 from tests.screen.test_screen import feed_to
 

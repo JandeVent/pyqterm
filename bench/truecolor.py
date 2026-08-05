@@ -4,14 +4,14 @@
     python bench/truecolor.py      # fit the rainbow/gradients to the window
     python bench/truecolor.py 120  # force a width
 
-Prints raw escape sequences (stdlib only — no Qt, no pyqterm imports):
+Prints raw escape sequences (stdlib only — no Qt, no pyqtermx imports):
 the 16 ANSI colors, the 256-color cube and grayscale ramp, and
 truecolor primary ramps, a hue rainbow, and background gradients via
 SGR 38;2 / 48;2. A short environment report (COLORTERM, TERM) goes to
 stderr — stdout carries only the card — and the full-width rows trim
 to the window when it is narrower than 120 columns.
 
-Run it inside pyqterm to eyeball 24-bit rendering: smooth ramps and
+Run it inside pyqtermx to eyeball 24-bit rendering: smooth ramps and
 aligned cube rows mean the truecolor chain works end to end.
 """
 
@@ -112,7 +112,7 @@ def build_card(columns: int) -> bytes:
     (so its pixel checks apply verbatim), adapted to `columns` width for
     the rainbow and gradient rows."""
     card = Card()
-    card.put(b"\x1b[1m", "pyqterm — xterm-256 + truecolor rendering")
+    card.put(b"\x1b[1m", "pyqtermx — xterm-256 + truecolor rendering")
     card.put(b"\x1b[0m", "   (live card from bench/truecolor.py — run inside the terminal)")
     card.newline()
 
@@ -192,7 +192,7 @@ def report(columns: int) -> str:
     if "truecolor" not in colorterm and "24bit" not in colorterm:
         lines.append(
             "warning: COLORTERM is not truecolor — the app may fall back to "
-            "256 colors; pyqterm sets COLORTERM=truecolor for its children"
+            "256 colors; pyqtermx sets COLORTERM=truecolor for its children"
         )
     if columns < FULL_WIDTH:
         lines.append(

@@ -1,4 +1,4 @@
-"""T09 — the runnable app: `python -m pyqterm` wires pty + session +
+"""T09 — the runnable app: `python -m pyqtermx` wires pty + session +
 widget into a window. Smoke test: the window builds, the session runs
 and delivers snapshots to the widget (offscreen)."""
 
@@ -7,7 +7,7 @@ from __future__ import annotations
 from pytestqt.qtbot import QtBot
 from PyQt6.QtWidgets import QMainWindow
 
-from pyqterm.__main__ import DEFAULT_COLUMNS, DEFAULT_LINES, build_window
+from pyqtermx.__main__ import DEFAULT_COLUMNS, DEFAULT_LINES, build_window
 
 
 def test_build_window_wires_the_layers(qtbot: QtBot) -> None:

@@ -15,7 +15,7 @@ import random
 
 import pytest
 
-from pyqterm.parser import Parser
+from pyqtermx.parser import Parser
 from tests.recorder import Recorder
 
 #: Corpus exercising every state family plus awkward boundaries.

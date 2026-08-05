@@ -1,6 +1,6 @@
 # Single-writer threading: reader thread owns the emulator, GUI posts commands
 
-pyqterm gains a PTY and a GUI in the same phase, and the two ends of the pipeline must share the screen model. We chose a dedicated reader thread that is the **only writer** of terminal state: it reads the pty, applies every command (send_data, resize, scroll, close) from a serialized command queue, and emits change notifications as queued signals carrying **snapshots** (immutable changed rows, the viewport offset, the cursor position). The GUI thread never reads or writes the model directly — it renders from snapshots and posts commands. Rows and cells are frozen objects, so snapshot handoff needs no locks and no copies.
+pyqtermx gains a PTY and a GUI in the same phase, and the two ends of the pipeline must share the screen model. We chose a dedicated reader thread that is the **only writer** of terminal state: it reads the pty, applies every command (send_data, resize, scroll, close) from a serialized command queue, and emits change notifications as queued signals carrying **snapshots** (immutable changed rows, the viewport offset, the cursor position). The GUI thread never reads or writes the model directly — it renders from snapshots and posts commands. Rows and cells are frozen objects, so snapshot handoff needs no locks and no copies.
 
 ## The model
 

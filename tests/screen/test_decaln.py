@@ -7,7 +7,7 @@ slot, and the modes are untouched. In the alternate screen the active
 grid is the one filled (ADR-0004).
 """
 
-from pyqterm.screen import Cell, Screen
+from pyqtermx.screen import Cell, Screen
 
 from tests.screen.test_screen import feed_to, make_screen
 

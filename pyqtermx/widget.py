@@ -13,7 +13,7 @@ The paint backend:
   persistent QImage (partial snapshots repaint only their dirty rows),
   `paintEvent` blits the damaged region. Also the test seam — pixel
   checks read the image offscreen. This is the shipping backend
-  (`pyqterm/__main__.py`).
+  (`pyqtermx/__main__.py`).
 
 Paint events are scheduled with `update(QRect)` limited to the region
 the snapshot changed (partial rendering: a one-row update repaints one
@@ -54,7 +54,7 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtWidgets import QApplication, QScrollBar, QWidget
 
-from pyqterm.input import (
+from pyqtermx.input import (
     CTRL_MOD,
     encode_arrow_key,
     encode_key,
@@ -62,10 +62,10 @@ from pyqterm.input import (
     encode_paste,
     encode_sgr_mouse,
 )
-from pyqterm.render import DEFAULT_BG, TerminalRenderer
-from pyqterm.screen import Row
-from pyqterm.selection import Selection, contains, extend, line, point, selected_text, word
-from pyqterm.session import Session, Snapshot
+from pyqtermx.render import DEFAULT_BG, TerminalRenderer
+from pyqtermx.screen import Row
+from pyqtermx.selection import Selection, contains, extend, line, point, selected_text, word
+from pyqtermx.session import Session, Snapshot
 
 if TYPE_CHECKING:
     # The mixin is a plain object at runtime (PyQt6 doesn't chain

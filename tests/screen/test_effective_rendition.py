@@ -8,7 +8,7 @@ DECSCNM mode XOR — both on cancels out, either alone swaps fg/bg.
 registry (`?5h`/`?5l` were already wired by the registry in Phase 2).
 """
 
-from pyqterm.screen import Cell, Screen
+from pyqtermx.screen import Cell, Screen
 
 from tests.screen.test_screen import feed_to, make_screen
 

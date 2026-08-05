@@ -7,8 +7,8 @@ half-wired sequence can never silently parse-and-ignore. The escape table
 via the source, since `execute` handles a fixed handful of byte codes.
 """
 
-from pyqterm.emulator import Emulator
-from pyqterm.screen import Screen
+from pyqtermx.emulator import Emulator
+from pyqtermx.screen import Screen
 
 #: The finals this phase claims, keyed by their family (spec line 9:
 #: "~30 finals plus escapes").

@@ -13,8 +13,8 @@ and joins rows with newlines.
 
 from __future__ import annotations
 
-from pyqterm.screen import Cell, Row
-from pyqterm.selection import (
+from pyqtermx.screen import Cell, Row
+from pyqtermx.selection import (
     INF,
     Selection,
     column_range,

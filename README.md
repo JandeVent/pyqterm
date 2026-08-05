@@ -1,4 +1,4 @@
-# pyqterm
+# pyqtermx
 
 A modern terminal emulator in Python, rendered with PyQt6 — targeting
 **ECMA-48**, **VT102**, and **xterm** compatibility (the de facto modern
@@ -7,15 +7,15 @@ standard).
 The emulation pipeline is implemented from scratch — parser, screen
 model, PTY layer, renderer — with xterm.js as a behavioral reference,
 not a code source. The result is a terminal you
-can actually type into: `python -m pyqterm` spawns your shell.
+can actually type into: `python -m pyqtermx` spawns your shell.
 
-![A live screen capture of a pyqterm session](screenshot/screen-capture.gif)
+![A live screen capture of a pyqtermx session](screenshot/screen-capture.gif)
 
 ## Screenshots
 
-![pyqterm rendering a neofetch-style Arch Linux screen](screenshot/pyqterm-neofetch.png)
+![pyqtermx rendering a neofetch-style Arch Linux screen](screenshot/pyqtermx-neofetch.png)
 
-A neofetch-style snapshot rendered entirely by pyqterm's own pipeline —
+A neofetch-style snapshot rendered entirely by pyqtermx's own pipeline —
 parser → emulator → screen → renderer — with the feature set as the
 info panel and the block-letter banner and box frame drawn as vectors
 (`bench/neofetch.py`).
@@ -128,15 +128,15 @@ installed separately until it is declared as a project dependency.
 ## Run
 
 ```sh
-python -m pyqterm
+python -m pyqtermx
 ```
 
 Starts your `$SHELL` (or `/bin/zsh` as a fallback) in an
 `xterm-256color` session. Pass a command to run something else:
 
 ```sh
-python -m pyqterm bash
-python -m pyqterm ssh user@host
+python -m pyqtermx bash
+python -m pyqtermx ssh user@host
 ```
 
 Close the window to shut the session down cleanly (EOF/SIGHUP to the
@@ -162,16 +162,16 @@ back; it never reads the model (ADR-0005).
 
 | Module | Layer | Role |
 |---|---|---|
-| `pyqterm/parser.py` | ① | Byte-stream state machine (VT500 table), OSC collection |
-| `pyqterm/dispatcher.py` | ① | The parser→emulator event protocol |
-| `pyqterm/emulator.py` | ② | CSI/ESC dispatch tables; turns parse events into screen ops |
-| `pyqterm/screen.py` | ② | The dumb model: cells, cursor, modes, scroll regions, alt screen, scrollback, viewport |
-| `pyqterm/ptyspawn.py` | 0 | Qt-free PTY spawn: fork/setsid/winsize/lifecycle |
-| `pyqterm/session.py` | glue | Reader thread, command queue, snapshot emission |
-| `pyqterm/render.py` | ③ | Snapshot → pixels: glyphs, vector box/block chars, cursor |
-| `pyqterm/widget.py` | ③ | `TerminalWidget` (CPU), input bridge |
-| `pyqterm/input.py` | ③ | `QKeyEvent` → terminal bytes, paste encoding |
-| `pyqterm/__main__.py` | app | Thin glue: window + session lifecycle |
+| `pyqtermx/parser.py` | ① | Byte-stream state machine (VT500 table), OSC collection |
+| `pyqtermx/dispatcher.py` | ① | The parser→emulator event protocol |
+| `pyqtermx/emulator.py` | ② | CSI/ESC dispatch tables; turns parse events into screen ops |
+| `pyqtermx/screen.py` | ② | The dumb model: cells, cursor, modes, scroll regions, alt screen, scrollback, viewport |
+| `pyqtermx/ptyspawn.py` | 0 | Qt-free PTY spawn: fork/setsid/winsize/lifecycle |
+| `pyqtermx/session.py` | glue | Reader thread, command queue, snapshot emission |
+| `pyqtermx/render.py` | ③ | Snapshot → pixels: glyphs, vector box/block chars, cursor |
+| `pyqtermx/widget.py` | ③ | `TerminalWidget` (CPU), input bridge |
+| `pyqtermx/input.py` | ③ | `QKeyEvent` → terminal bytes, paste encoding |
+| `pyqtermx/__main__.py` | app | Thin glue: window + session lifecycle |
 
 ## Compatibility & status
 
@@ -193,7 +193,7 @@ Phase 5.
 
 ```sh
 pytest                      # 700+ tests across parser, screen, emulator, pty, input, GUI
-mypy pyqterm                # strict type checking
+mypy pyqtermx                # strict type checking
 python bench/run.py         # perf harness (see bench/results/baseline.json)
 ```
 

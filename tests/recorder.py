@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from pyqterm.dispatcher import Dispatcher
-from pyqterm.params import Params
-from pyqterm.parser import Parser
+from pyqtermx.dispatcher import Dispatcher
+from pyqtermx.params import Params
+from pyqtermx.parser import Parser
 
 
 class Recorder(Dispatcher):

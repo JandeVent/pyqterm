@@ -1,4 +1,4 @@
-"""The runnable terminal (`python -m pyqterm`) — thin glue: pty +
+"""The runnable terminal (`python -m pyqtermx`) — thin glue: pty +
 session + widget in a window. All behavior lives in the tested layers;
 this module only wires them together.
 
@@ -14,16 +14,16 @@ import sys
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QApplication, QMainWindow
 
-from pyqterm.session import Session
-from pyqterm.widget import TerminalWidget
+from pyqtermx.session import Session
+from pyqtermx.widget import TerminalWidget
 
 # The pty backend is platform-native: the ConPTY wrapper (ADR-0007) on
 # Windows, the fork-based pty (ADR-0005) elsewhere. Both implement the
 # same narrow interface.
 if sys.platform == "win32":
-    from pyqterm.win_pty import WinPty as Pty
+    from pyqtermx.win_pty import WinPty as Pty
 else:
-    from pyqterm.ptyspawn import Pty
+    from pyqtermx.ptyspawn import Pty
 
 DEFAULT_LINES = 24
 DEFAULT_COLUMNS = 80
@@ -44,7 +44,7 @@ def build_window(
     session = Session(pty, lines=rows, columns=cols)
     widget = TerminalWidget(session)
     window = QMainWindow()
-    window.setWindowTitle("pyqterm")
+    window.setWindowTitle("pyqtermx")
     window.setCentralWidget(widget)
     window.resize(widget.sizeHint() + QSize(0, 32))
     return window, session

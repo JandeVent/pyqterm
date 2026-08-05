@@ -325,7 +325,7 @@ _LOOKUP, _UNICODE_DEFAULTS = _build_lookup()
 
 class Parser:
     """Stream parser: feed code points (or UTF-8 bytes), observe dispatcher
-    calls. The dispatcher protocol (pyqterm/dispatcher.py) is the pre-agreed
+    calls. The dispatcher protocol (pyqtermx/dispatcher.py) is the pre-agreed
     test seam (tests/recorder.py)."""
 
     def __init__(self, dispatcher: Dispatcher) -> None:

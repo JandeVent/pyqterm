@@ -1,13 +1,13 @@
 """A stream parser for ECMA-48 / VT terminal input: code points in, dispatcher calls out.
 
-This module wraps the Cython C extension (pyqterm._parser) which compiles the
+This module wraps the Cython C extension (pyqtermx._parser) which compiles the
 state machine inner loop to native code for maximum performance while
 maintaining full API compatibility with the original pure-Python design.
 
     bytes → UTF-8 decoder → code points → state machine → dispatcher calls
 """
 
-from pyqterm._parser import (
+from pyqtermx._parser import (
     Parser,
     ParserState,
     Action,

@@ -12,10 +12,10 @@ import pytest
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QFont, QImage, QPainter
 
-from pyqterm.render import DEFAULT_BG, DEFAULT_FG, TerminalRenderer
-from pyqterm.screen import Cell, Row, rgb
-from pyqterm.selection import Selection
-from pyqterm.session import Snapshot
+from pyqtermx.render import DEFAULT_BG, DEFAULT_FG, TerminalRenderer
+from pyqtermx.screen import Cell, Row, rgb
+from pyqtermx.selection import Selection
+from pyqtermx.session import Snapshot
 
 
 def make_row(*cells: Cell) -> Row:
