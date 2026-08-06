@@ -16,6 +16,7 @@ import os
 import select
 import signal
 import sys
+import tempfile
 import time
 
 import pytest
@@ -164,6 +165,25 @@ def test_child_gets_geometry_environment() -> None:
         assert b"GEOM:120x33" in out
     finally:
         pty.close()
+
+
+def test_child_starts_in_cwd() -> None:
+    """The child chdirs into `cwd` before exec, so the shell lands in
+    the requested working directory (xCode's "Open Terminal Here")."""
+    with tempfile.TemporaryDirectory() as folder:
+        marker = os.path.join(folder, "cwd-ok")
+        pty = spawn_child(
+            "import os\n"
+            f"open({marker!r}, 'w').close()\n"
+            "print('CWD_DONE', flush=True)\n",
+            cwd=folder,
+        )
+        try:
+            out = read_until(pty, b"CWD_DONE")
+            assert b"CWD_DONE" in out
+            assert os.path.isfile(marker)
+        finally:
+            pty.close()
 
 
 def test_close_terminates_a_still_running_child() -> None:

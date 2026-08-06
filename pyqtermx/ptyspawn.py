@@ -59,6 +59,7 @@ class Pty:
         command: Sequence[str] | None = None,
         *,
         env: Mapping[str, str] | None = None,
+        cwd: str | None = None,
         rows: int = 24,
         cols: int = 80,
     ) -> None:
@@ -92,6 +93,8 @@ class Pty:
         if pid == 0:  # child
             try:
                 os.setsid()
+                if cwd is not None:
+                    os.chdir(cwd)
                 for target in (0, 1, 2):
                     os.dup2(slave_fd, target)
                 if slave_fd > 2:
