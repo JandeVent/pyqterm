@@ -11,6 +11,13 @@ can actually type into: `python -m pyqtermx` spawns your shell.
 
 ![A live screen capture of a pyqtermx session](https://raw.githubusercontent.com/JandeVent/pyqtermx/main/screenshot/screen-capture.gif)
 
+## Quick Start
+
+```bash
+pip install pyqtermx
+python -m pyqtermx
+```
+
 ## Screenshots
 
 ![pyqtermx rendering a neofetch-style Arch Linux screen](https://raw.githubusercontent.com/JandeVent/pyqtermx/main/screenshot/pyqtermx-neofetch.png)
