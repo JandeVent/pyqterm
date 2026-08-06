@@ -53,6 +53,8 @@ from PyQt6.QtGui import (
     QPainter,
     QResizeEvent,
     QWheelEvent,
+    QFont,
+    QColor
 )
 from PyQt6.QtWidgets import QApplication, QScrollBar, QWidget
 
@@ -64,7 +66,7 @@ from pyqtermx.input import (
     encode_paste,
     encode_sgr_mouse,
 )
-from pyqtermx.render import DEFAULT_BG, TerminalRenderer
+from pyqtermx.render import TerminalRenderer
 from pyqtermx.screen import Row
 from pyqtermx.selection import Selection, contains, extend, line, point, selected_text, word
 from pyqtermx.session import Session, Snapshot
@@ -242,6 +244,26 @@ class TerminalMixin(_QtBase):
         self._rebuild_backing()
         if session.snapshots:
             self._apply_snapshot(session.snapshots[-1])
+
+    def set_font(self, font: QFont) -> None:
+        """Replace the glyph font, re-derive the grid geometry from the
+        new cell metrics, rebuild the backing, and re-render the last
+        snapshot. The pty is resized to the new grid size (debounced
+        like a widget resize)."""
+        self._renderer.set_font(font)
+        if self._session is not None:
+            lines = max(1, self.height() // self._renderer.cell_h)
+            columns = max(1, self.width() // self._renderer.cell_w)
+            self._lines, self._columns = lines, columns
+            self._session.resize(lines, columns)
+        self._rebuild_backing()
+        self._refresh()
+
+    def set_palette(self, fg: QColor, bg: QColor) -> None:
+        """Replace the terminal's default colors and repaint the last
+        snapshot with them."""
+        self._renderer.set_palette(fg, bg)
+        self._refresh()
 
     def _on_session_snapshot(self, snapshot: Snapshot) -> None:
         """Runs on the reader thread — hand the snapshot to the GUI
@@ -690,7 +712,7 @@ class TerminalWidget(TerminalMixin, QWidget):
             QImage.Format.Format_RGB32,
         )
         image.setDevicePixelRatio(dpr)
-        image.fill(DEFAULT_BG)  # the terminal background, not pure black
+        image.fill(self._renderer.default_bg)  # the terminal background, not pure black
         return image
 
     def _rebuild_backing(self) -> None:
@@ -772,7 +794,7 @@ class TerminalWidget(TerminalMixin, QWidget):
         # WA_OpaquePaintEvent means no background erase (no flicker).
         painter = QPainter(self)
         rect = event.rect() if event is not None else self.rect()
-        painter.fillRect(rect, DEFAULT_BG)
+        painter.fillRect(rect, self._renderer.default_bg)
         # A backing built before the widget was shown on a scaled screen
         # is 1x — rebuild it lazily rather than upscale the blit.
         if self._image.devicePixelRatio() != self.devicePixelRatioF():

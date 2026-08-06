@@ -300,6 +300,34 @@ def test_caller_font_is_not_mutated() -> None:
     assert font.styleStrategy() == original
 
 
+def test_set_font_replaces_font_and_metrics() -> None:
+    renderer = TerminalRenderer()
+    old_w, old_h = renderer.cell_w, renderer.cell_h
+    big = QFont("Menlo", 24)
+    renderer.set_font(big)
+    assert renderer.font.family() == "Menlo"
+    assert renderer.font.pointSize() == 24
+    assert renderer.cell_w >= old_w
+    assert renderer.cell_h >= old_h
+
+
+def test_set_palette_replaces_defaults() -> None:
+    renderer = TerminalRenderer()
+    assert renderer.default_fg == DEFAULT_FG
+    assert renderer.default_bg == DEFAULT_BG
+    fg = QColor(0x00, 0x00, 0x00)
+    bg = QColor(0xff, 0xff, 0xff)
+    renderer.set_palette(fg, bg)
+    assert renderer.default_fg == fg
+    assert renderer.default_bg == bg
+
+
+def test_set_palette_repaints_blank_cell_with_new_bg(renderer: TerminalRenderer, image: QImage) -> None:
+    renderer.set_palette(QColor(0x00, 0x00, 0x00), QColor(0x12, 0x34, 0x56))
+    renderer.render(image, snapshot([make_row(blank_cell())]))
+    assert cell_pixel(image, renderer, 0) == QColor(0x12, 0x34, 0x56)
+
+
 # -- vector box-drawing and block characters (no font seams) -------------
 
 

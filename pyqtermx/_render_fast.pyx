@@ -91,8 +91,13 @@ cdef inline int _mix(int a, int b):
     )
 
 
-cpdef list collect_runs(row, bint reverse_video, sel_range=None):
+cpdef list collect_runs(row, bint reverse_video, sel_range=None,
+                        int dflt_fg_rgb=_DFLT_FG_RGB, int dflt_bg_rgb=_DFLT_BG_RGB):
     """The paint runs for one row — the pure, testable hot path.
+
+    `dflt_fg_rgb`/`dflt_bg_rgb` are the packed default colors (the
+    renderer's palette, or the module defaults when omitted) used by
+    the SGR 2 dim mix to resolve -1 cell colors.
 
     Returns a flat list of tuples (the draw loop in `paint_row` walks
     them; render.py's fallback `_paint_row` is the reference):
@@ -200,8 +205,8 @@ cpdef list collect_runs(row, bint reverse_video, sel_range=None):
         if cell.dim:
             # SGR 2: fg mixed halfway toward bg (xterm faint).
             fg_int = _mix(
-                _to_rgb(fg_int, _DFLT_FG_RGB if fg_sel == 1 else _DFLT_BG_RGB),
-                _to_rgb(bg_int, _DFLT_FG_RGB if bg_sel == 1 else _DFLT_BG_RGB),
+                _to_rgb(fg_int, dflt_fg_rgb if fg_sel == 1 else dflt_bg_rgb),
+                _to_rgb(bg_int, dflt_fg_rgb if bg_sel == 1 else dflt_bg_rgb),
             )
         data = cell.data
         if len(data) == 1:
@@ -257,7 +262,13 @@ cpdef void paint_row(painter, renderer, int viewport_row, row, bint reverse_vide
     drawText per glyph run, individual draws for box/block/wide cells.
     `renderer` supplies the color/font caches and the box/block
     drawing helpers; the painter stays open (callers own it)."""
-    cdef list runs = collect_runs(row, reverse_video, sel_range)
+    cdef list runs = collect_runs(
+        row, reverse_video, sel_range,
+        ((renderer._default_fg.red() << 16) | (renderer._default_fg.green() << 8)
+         | renderer._default_fg.blue()),
+        ((renderer._default_bg.red() << 16) | (renderer._default_bg.green() << 8)
+         | renderer._default_bg.blue()),
+    )
     cdef int cw = renderer.cell_w
     cdef int ch = renderer.cell_h
     cdef int y0 = viewport_row * ch
@@ -266,6 +277,8 @@ cpdef void paint_row(painter, renderer, int viewport_row, row, bint reverse_vide
     cdef object run, text, data, fg, bg, rect
     cdef int kind, start, end, ci, cj, sel, sel2, cp, col
     cdef bint bold, italic, underline, strike, overline, wide
+    cdef object dflt_fg = renderer._default_fg
+    cdef object dflt_bg = renderer._default_bg
 
     for run in runs:
         kind = run[0]
@@ -277,7 +290,7 @@ cpdef void paint_row(painter, renderer, int viewport_row, row, bint reverse_vide
             sel = run[4]
             painter.fillRect(
                 start * cw, y0, (end - start) * cw, ch,
-                color(ci, DEFAULT_FG if sel == 1 else DEFAULT_BG),
+                color(ci, dflt_fg if sel == 1 else dflt_bg),
             )
         elif kind == 1:
             # Glyph run: one drawText plus the underline/strike/overline fills.
@@ -291,7 +304,7 @@ cpdef void paint_row(painter, renderer, int viewport_row, row, bint reverse_vide
             strike = run[8]
             overline = run[9]
             text = run[10]
-            fg = color(ci, DEFAULT_FG if sel == 1 else DEFAULT_BG)
+            fg = color(ci, dflt_fg if sel == 1 else dflt_bg)
             rect = QRect(start * cw, y0, (end - start) * cw, ch)
             painter.setFont(font_for(bold, italic))
             painter.setPen(fg)
@@ -317,8 +330,8 @@ cpdef void paint_row(painter, renderer, int viewport_row, row, bint reverse_vide
             strike = run[11]
             overline = run[12]
             wide = run[13]
-            fg = color(ci, DEFAULT_FG if sel == 1 else DEFAULT_BG)
-            bg = color(cj, DEFAULT_FG if sel2 == 1 else DEFAULT_BG)
+            fg = color(ci, dflt_fg if sel == 1 else dflt_bg)
+            bg = color(cj, dflt_fg if sel2 == 1 else dflt_bg)
             rect = QRect(col * cw, y0, cw, ch)
             if wide:
                 rect.setWidth(2 * cw)

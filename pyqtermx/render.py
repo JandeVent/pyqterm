@@ -116,6 +116,13 @@ class TerminalRenderer:
             # off painter antialiasing, not from jagged glyphs; at a
             # Retina DPR a NoAntialias mask still shows sawtooth.
             self._font.setStyleStrategy(QFont.StyleStrategy.NoAntialias)
+        self._default_fg = DEFAULT_FG
+        self._default_bg = DEFAULT_BG
+        self._apply_font(None)  # keep the prepared font, derive metrics
+
+    def _apply_font(self, font: QFont | None) -> None:
+        """(Re)derive the font, cell metrics, and derived-font cache."""
+        self._font = QFont(font) if font is not None else self._font
         metrics = QFontMetrics(self._font)
         self.cell_w = metrics.horizontalAdvance("M")
         self.cell_h = metrics.height()
@@ -125,6 +132,21 @@ class TerminalRenderer:
         #: Cell color ints → QColor: a per-cell QColor construction was
         #: ~0.55 s of the htop profile (capped, see `_COLOR_CACHE_CAP`).
         self._color_cache: dict[tuple[int, bool], QColor] = {}
+
+    def set_font(self, font: QFont) -> None:
+        """Replace the glyph font and re-derive the cell grid metrics.
+        The widget must rebuild its backing and re-post the resize
+        after calling this (cell_w/cell_h changed)."""
+        self._apply_font(font)
+
+    def set_palette(self, fg: QColor, bg: QColor) -> None:
+        """Replace the default foreground/background colors (the
+        terminal's `-1` cell colors). The widget must re-render after
+        calling this — the color cache is cleared so defaults are not
+        baked into cached cells."""
+        self._default_fg = fg
+        self._default_bg = bg
+        self._color_cache.clear()
 
     def _color(self, color: int, default: QColor, *, bright: bool = False) -> QColor:
         """A cell color int → QColor (-1 → `default`), cached by value."""
@@ -162,6 +184,16 @@ class TerminalRenderer:
     def font(self) -> QFont:
         """The glyph font (bold/italic variants derive from it)."""
         return self._font
+
+    @property
+    def default_fg(self) -> QColor:
+        """The default foreground (the `-1` cell color)."""
+        return self._default_fg
+
+    @property
+    def default_bg(self) -> QColor:
+        """The default background (the `-1` cell color)."""
+        return self._default_bg
 
     def _font_for(self, bold: bool, italic: bool) -> QFont:
         key = (bold, italic)
@@ -299,16 +331,16 @@ class TerminalRenderer:
         run_start = 0
         run_bg: QColor | None = None
         for col, cell in enumerate(cells):
-            bg = color(cell.bg, DEFAULT_BG)
+            bg = color(cell.bg, self._default_bg)
             if cell.reverse != reverse_video:  # SGR 7 XOR DECSCNM ?5
-                bg = color(cell.fg, DEFAULT_FG)
+                bg = color(cell.fg, self._default_fg)
             if sel_range is not None and sel_range[0] <= col <= sel_range[1]:
                 # Selected: the background is the cell's foreground (the
                 # glyph pass swaps the other way — they must agree).
                 bg = (
-                    color(cell.fg, DEFAULT_FG, bright=cell.bold)
+                    color(cell.fg, self._default_fg, bright=cell.bold)
                     if cell.reverse == reverse_video
-                    else color(cell.bg, DEFAULT_BG, bright=cell.bold)
+                    else color(cell.bg, self._default_bg, bright=cell.bold)
                 )
             if bg != run_bg:
                 if run_bg is not None:
@@ -355,13 +387,13 @@ class TerminalRenderer:
             if cell.hidden or cell.data == "":
                 flush(col)
                 continue  # continuation cells draw no glyph
-            bg = color(cell.bg, DEFAULT_BG)
-            fg = color(cell.fg, DEFAULT_FG, bright=cell.bold)
+            bg = color(cell.bg, self._default_bg)
+            fg = color(cell.fg, self._default_fg, bright=cell.bold)
             if cell.reverse != reverse_video:
                 # SGR 7 XOR DECSCNM: fg/bg swap — bold-is-bright
                 # applies after the swap (xterm behavior).
-                fg = color(cell.bg, DEFAULT_BG, bright=cell.bold)
-                bg = color(cell.fg, DEFAULT_FG)
+                fg = color(cell.bg, self._default_bg, bright=cell.bold)
+                bg = color(cell.fg, self._default_fg)
             if sel_range is not None and sel_range[0] <= col <= sel_range[1]:
                 fg, bg = bg, fg  # selection renders reversed
             if cell.dim:
@@ -478,7 +510,7 @@ class TerminalRenderer:
         if not (0 <= viewport_row < viewport_lines):
             return
         rect = self.cell_rect(viewport_row, x)
-        painter.fillRect(rect, DEFAULT_FG)
+        painter.fillRect(rect, self._default_fg)
 
 
 # Late import to avoid circular dependency (_render_fast imports render).
