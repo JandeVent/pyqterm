@@ -221,6 +221,29 @@ def test_cursor_is_reverse_block(renderer: TerminalRenderer, image: QImage) -> N
     assert cell_pixel(image, renderer, 0) == DEFAULT_FG  # block over the default bg
 
 
+def test_cursor_inverts_character_under_it(renderer: TerminalRenderer) -> None:
+    # A character under the cursor renders inverted — the block is the
+    # cell's foreground, the glyph its background — so the cursor never
+    # hides the text it sits on (xterm). `rows` is the merged viewport
+    # the widget passes (the snapshot alone is incremental).
+    img = QImage(round(1 * renderer.cell_w), renderer.cell_h, QImage.Format.Format_RGB32)
+    img.fill(Qt.GlobalColor.black)
+    cell = Cell("X", fg=rgb(255, 0, 0), bg=rgb(0, 0, 255))
+    renderer.render(img, snapshot([make_row(cell)], cursor=(0, 0)), rows=[make_row(cell)])
+    assert cell_has_color(img, renderer, 0, QColor(255, 0, 0))  # the block
+    assert cell_has_color(img, renderer, 0, QColor(0, 0, 255))  # the glyph
+
+
+def test_cursor_inverts_default_character(renderer: TerminalRenderer) -> None:
+    # A default-rendition character: block = default fg, glyph = default
+    # bg — the character stays visible on the block.
+    img = QImage(round(1 * renderer.cell_w), renderer.cell_h, QImage.Format.Format_RGB32)
+    img.fill(Qt.GlobalColor.black)
+    renderer.render(img, snapshot([make_row(Cell("M"))], cursor=(0, 0)), rows=[make_row(Cell("M"))])
+    assert cell_has_color(img, renderer, 0, DEFAULT_FG)  # the block
+    assert cell_has_color(img, renderer, 0, DEFAULT_BG)  # the glyph
+
+
 def test_hidden_cursor_draws_nothing(renderer: TerminalRenderer, image: QImage) -> None:
     # DECTCEM ?25l (cursor_visible=False): the block must not paint —
     # the donut demo hides the cursor while animating.

@@ -32,7 +32,7 @@ from PyQt6.QtGui import (
 from PyQt6.QtWidgets import QApplication
 
 from pyqtermx.render import DEFAULT_BG, DEFAULT_FG
-from pyqtermx.screen import Cell, Row
+from pyqtermx.screen import Cell, Row, rgb
 from pyqtermx.selection import Selection
 from pyqtermx.session import Session, Snapshot
 from pyqtermx.widget import TerminalWidget, merge_viewport
@@ -1263,3 +1263,42 @@ def test_cursor_blink_repaints_only_cursor_row(
     after = [widget._image.pixelColor(x, 0) for x in range(widget._image.width())]
     assert before == after  # row 0 untouched
     assert rects[-1] == QRect(0, 1 * ch, widget._image.width(), ch)  # one row
+
+
+def test_cursor_blink_inverts_character_under_it(
+    widget: TerminalWidget, session: Session
+) -> None:
+    """A blink tick on a text cell shows the character inverted (block =
+    the cell's fg, glyph = its bg), and the hidden phase restores the
+    plain text — the cursor never hides the character it sits on. The
+    dominant color flips: red (the fg block) while the cursor is on the
+    cell, blue (the bg) once it blinks away."""
+    red = rgb(255, 0, 0)
+    blue = rgb(0, 0, 255)
+    rows = (
+        Row([Cell("X", fg=red, bg=blue)] + [Cell.blank() for _ in range(session.columns - 1)]),
+        Row([Cell.blank() for _ in range(session.columns)]),
+    )
+    widget._apply_snapshot(
+        Snapshot(
+            dirty_rows=(0, 1),
+            rows=rows,
+            scrollback_len=0,
+            viewport_offset=0,
+            cursor=(0, 0),
+        )
+    )
+
+    def count(color: QColor) -> int:
+        r = widget._renderer
+        n = 0
+        for y in range(r.cell_h):
+            for x in range(round(r.cell_w)):
+                if widget._image.pixelColor(x, y) == color:
+                    n += 1
+        return n
+
+    assert count(QColor(255, 0, 0)) > count(QColor(0, 0, 255))  # inverted: fg block
+    widget._cursor_blink = False
+    widget._repaint_cursor()
+    assert count(QColor(0, 0, 255)) > count(QColor(255, 0, 0))  # plain: bg block

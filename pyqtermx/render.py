@@ -309,7 +309,15 @@ class TerminalRenderer:
         if visible and snapshot.cursor[0] >= 0:
             cursor_row = snapshot.cursor[0] + snapshot.viewport_offset
             if row_indices is None or cursor_row in row_indices:
-                self._paint_cursor(painter, snapshot, viewport_lines)
+                self._paint_cursor(
+                    painter,
+                    snapshot,
+                    viewport_lines,
+                    rows=rows,
+                    sel_range=(
+                        column_range(selection, cursor_row) if selection is not None else None
+                    ),
+                )
 
     # -- painting --------------------------------------------------------
 
@@ -529,17 +537,66 @@ class TerminalRenderer:
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, chr(cp))
 
     def _paint_cursor(
-        self, painter: QPainter, snapshot: Snapshot, viewport_lines: int
+        self,
+        painter: QPainter,
+        snapshot: Snapshot,
+        viewport_lines: int,
+        rows: Sequence[Row] | None = None,
+        sel_range: tuple[int, int] | None = None,
     ) -> None:
         """The cursor as a reverse block at its viewport position (grid
         row plus the scroll offset — the viewport shows history rows
-        above the grid); off-viewport cursors draw nothing."""
+        above the grid); off-viewport cursors draw nothing. A character
+        under the cursor renders inverted — the block is the cell's
+        foreground, the glyph its background — so the cursor never
+        hides the text it sits on (xterm); an empty cell keeps the
+        solid block. `rows` (the merged viewport) supplies the cell;
+        `sel_range` is the selection's column range on the cursor row,
+        so a selected cell's swap is undone before the inversion."""
         y, x = snapshot.cursor
         viewport_row = y + snapshot.viewport_offset
         if not (0 <= viewport_row < viewport_lines):
             return
         rect = self.cell_rect(viewport_row, x)
-        painter.fillRect(rect, self._default_fg)
+        row_cells: Sequence[Cell] | None = None
+        if rows is not None and viewport_row < len(rows):
+            row_cells = rows[viewport_row].cells
+        elif rows is None and snapshot.full and viewport_row < len(snapshot.rows):
+            row_cells = snapshot.rows[viewport_row].cells
+        cell = row_cells[x] if row_cells is not None and x < len(row_cells) else None
+        if cell is None or cell.hidden or cell.data == "":
+            # Empty (or unavailable) cell: the solid block.
+            painter.fillRect(rect, self._default_fg)
+            return
+        # The cell's rendered colors — derived exactly as `_paint_row`
+        # does (reverse-video XOR, selection, dim) — the block takes
+        # the foreground, the glyph the background.
+        color = self._color
+        fg = color(cell.fg, self._default_fg, bright=cell.bold)
+        bg = color(cell.bg, self._default_bg)
+        if cell.reverse != snapshot.reverse_video:
+            fg = color(cell.bg, self._default_bg, bright=cell.bold)
+            bg = color(cell.fg, self._default_fg)
+        if sel_range is not None and sel_range[0] <= x <= sel_range[1]:
+            fg, bg = bg, fg
+        if cell.dim:
+            fg = QColor(
+                (fg.red() + bg.red()) // 2,
+                (fg.green() + bg.green()) // 2,
+                (fg.blue() + bg.blue()) // 2,
+            )
+        if row_cells is not None and x + 1 < len(row_cells) and row_cells[x + 1].data == "":
+            rect.setWidth(2 * self.cell_w)  # a wide char spans two cells
+        painter.fillRect(rect, fg)
+        painter.setFont(self._font_for(cell.bold, cell.italic))
+        painter.setPen(bg)
+        painter.drawText(rect, _TEXT_FLAGS, cell.data)
+        if cell.underline:
+            painter.fillRect(QRectF(rect.left(), rect.bottom() - 1, rect.width(), 1), bg)
+        if cell.strike:
+            painter.fillRect(QRectF(rect.left(), rect.top() + rect.height() // 2, rect.width(), 1), bg)
+        if cell.overline:
+            painter.fillRect(QRectF(rect.left(), rect.top(), rect.width(), 1), bg)
 
 
 # Late import to avoid circular dependency (_render_fast imports render).
