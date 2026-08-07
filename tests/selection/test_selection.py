@@ -7,10 +7,10 @@ are viewport rows/columns — the widget clears a selection when the
 viewport scrolls, because the GUI only ever holds viewport rows
 (ADR-0005) and cannot re-identify text that scrolled away.
 
-The behavior set is the modern-terminal one (xterm/kitty/wezterm/
-iTerm2): click-drag selects, double-click selects a word, triple-click
-a line, Alt-drag a rectangle, and copy trims trailing blanks per row
-and joins rows with newlines.
+The behavior set: a single click cancels any selection, click-drag
+selects, double-click selects a word, triple-click a line, Alt-drag a
+rectangle, and copy trims trailing blanks per row and joins rows with
+newlines.
 """
 
 from __future__ import annotations

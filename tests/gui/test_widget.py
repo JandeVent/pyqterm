@@ -637,50 +637,48 @@ def test_triple_click_selects_the_line(
     assert clipboard().text() == "hello"
 
 
-def test_click_inside_selection_keeps_it(
+def test_click_inside_selection_cancels_it(
     widget: TerminalWidget, session: Session, fake: FakePty, qtbot: QtBot
 ) -> None:
+    """A single click — even inside a selection — cancels it: selection
+    is drag-driven, so a click never keeps it."""
     fake.output(b"hello")
     wait_rows(widget, qtbot, "hello")
     clipboard().setText("")
     mouse_press(widget, cell_pos(widget, 0, 0))
     mouse_move(widget, cell_pos(widget, 0, 4))
     mouse_release(widget, cell_pos(widget, 0, 4))
-    mouse_press(widget, cell_pos(widget, 0, 2))  # inside: kept, not reset
+    assert widget._selection is not None
+    mouse_press(widget, cell_pos(widget, 0, 2))  # inside: cancelled
     mouse_release(widget, cell_pos(widget, 0, 2))
+    assert widget._selection is None
     press(widget, Qt.Key.Key_C, copy_mods())
-    assert clipboard().text() == "hello"
+    assert clipboard().text() == ""
 
 
-def test_click_inside_selection_survives_press_jitter(
+def test_bare_click_selects_nothing(
     widget: TerminalWidget, session: Session, fake: FakePty, qtbot: QtBot
 ) -> None:
-    """A bare click inside the selection must keep it even when the
-    press's micro-movement delivers a same-cell move — the re-anchor
-    must not collapse the kept selection to a point."""
+    """A bare click (press + release, no drag) creates no selection —
+    not even a single cell — and copy is a noop."""
     fake.output(b"hello worl")
     wait_rows(widget, qtbot, "hello worl")
     clipboard().setText("")
-    mouse_press(widget, cell_pos(widget, 0, 0))
-    mouse_move(widget, cell_pos(widget, 0, 9))
-    mouse_release(widget, cell_pos(widget, 0, 9))
-    # click inside (kept), with a jitter move inside the same cell
     pos = cell_pos(widget, 0, 6)
-    jitter = pos + QPoint(1, 1)
     mouse_press(widget, pos)
-    mouse_move(widget, jitter)
-    mouse_release(widget, jitter)
+    mouse_release(widget, pos)
+    assert widget._selection is None
     press(widget, Qt.Key.Key_C, copy_mods())
-    assert clipboard().text() == "hello worl"
+    assert clipboard().text() == ""
 
 
-def test_click_at_drag_end_keeps_selection(
+def test_click_at_drag_end_is_a_fresh_click(
     widget: TerminalWidget, session: Session, fake: FakePty, qtbot: QtBot
 ) -> None:
     """A click at the *release* cell of a drag must be a fresh click,
     not click #2 — the click counter anchors on press positions, so a
     backwards drag ending at (0,2) must not turn a click there into a
-    word selection."""
+    word selection. A fresh click cancels the selection."""
     fake.output(b"hello worl")
     wait_rows(widget, qtbot, "hello worl")
     clipboard().setText("")
@@ -688,11 +686,13 @@ def test_click_at_drag_end_keeps_selection(
     mouse_press(widget, cell_pos(widget, 0, 9))
     mouse_move(widget, cell_pos(widget, 0, 2))
     mouse_release(widget, cell_pos(widget, 0, 2))
-    # a click at the drag end: kept (a word selection would copy "hello")
+    # a click at the drag end: fresh click #1 → cancels (a word
+    # selection would copy "llo worl")
     mouse_press(widget, cell_pos(widget, 0, 2))
     mouse_release(widget, cell_pos(widget, 0, 2))
+    assert widget._selection is None
     press(widget, Qt.Key.Key_C, copy_mods())
-    assert clipboard().text() == "llo worl"
+    assert clipboard().text() == ""
 
 
 def test_redrag_from_drag_end_is_a_fresh_drag(
@@ -777,9 +777,8 @@ def test_output_clears_the_selection(
     widget: TerminalWidget, session: Session
 ) -> None:
     """New output changes the text under a selection — the selection is
-    invalidated (the same rule as scrolling), so the click's reversed
-    cell — the 'cursor' a click shows — never lingers over the new
-    content."""
+    invalidated (the same rule as scrolling), so the selected cells
+    never linger over the new content."""
     widget._apply_snapshot(
         Snapshot(
             dirty_rows=(),
@@ -791,8 +790,9 @@ def test_output_clears_the_selection(
     )
     pos = cell_pos(widget, 0, 0)
     mouse_press(widget, pos)
-    mouse_release(widget, pos)
-    assert widget._selection is not None  # the click's point anchor
+    mouse_move(widget, cell_pos(widget, 0, 2))
+    mouse_release(widget, cell_pos(widget, 0, 2))
+    assert widget._selection is not None
     assert cell_color(widget, 0, 0) == DEFAULT_FG  # selected: reversed block
 
     widget._apply_snapshot(
@@ -826,7 +826,8 @@ def test_cursor_move_snapshot_keeps_the_selection(
     )
     pos = cell_pos(widget, 0, 0)
     mouse_press(widget, pos)
-    mouse_release(widget, pos)
+    mouse_move(widget, cell_pos(widget, 0, 2))
+    mouse_release(widget, cell_pos(widget, 0, 2))
     assert widget._selection is not None
 
     widget._apply_snapshot(

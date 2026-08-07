@@ -28,10 +28,11 @@ only on the alternate screen, where there is none); Ctrl+Shift+V and
 Shift+Insert paste (bracketed when the app asked for `?2004`); ⌘+C
 (macOS) / Ctrl+Shift+C copy the selection.
 
-Mouse (the modern-terminal set): click-drag selects, double-click a
-word, triple-click a line, Alt-drag a rectangle; the selection renders
-reversed and copies to the clipboard (local actions — the terminal
-never sends bytes for them). When the app enables mouse tracking
+Mouse (the modern-terminal set): a single click cancels the selection,
+click-drag selects, double-click a word, triple-click a line, Alt-drag
+a rectangle; the selection renders reversed and copies to the
+clipboard (local actions — the terminal never sends bytes for them).
+When the app enables mouse tracking
 (`?1000` X10, `?1002` button-event, `?1003` any-event, `?1006` SGR) the
 mouse belongs to it: clicks and wheel forward as protocol events, the
 wheel stops scrolling the viewport, and selection is disabled.
@@ -69,7 +70,7 @@ from pyqtermx.input import (
 )
 from pyqtermx.render import CURSOR_BLOCK, CURSOR_OUTLINE, TerminalRenderer
 from pyqtermx.screen import Row
-from pyqtermx.selection import Selection, contains, extend, line, point, selected_text, word
+from pyqtermx.selection import Selection, extend, line, selected_text, word
 from pyqtermx.session import Session, Snapshot
 
 if TYPE_CHECKING:
@@ -150,12 +151,10 @@ class TerminalMixin(_QtBase):
         # Press/drag state: the selection is extended from the press
         # cell (never from the selection's own start — that drifts once
         # a backwards drag pushes the anchor to the far end) until the
-        # release; `_keep_selection` delays re-anchoring until the
-        # pointer leaves the press cell, so a bare click inside the
-        # kept selection doesn't collapse it to a point.
+        # release. A single click cancels the selection; only a drag
+        # (or double/triple-click) creates one.
         self._press_anchor: tuple[int, int] | None = None
         self._press_rectangular = False
-        self._keep_selection = False
         self._click_count = 1
         self._last_click_pos: Any = None
         self._last_click_time = 0.0
@@ -571,41 +570,31 @@ class TerminalMixin(_QtBase):
         return 1
 
     def _selection_press(self, event: QMouseEvent, count: int) -> None:
-        """Start (or extend) the selection at the click cell: single
-        click anchors a point, double-click the word, triple-click the
-        line; Alt+click switches to rectangular mode. A single click
-        inside the current selection keeps it (xterm) — the next drag
-        then re-anchors at the press cell, so selecting back-to-front
-        from inside the old selection selects the dragged range, not
-        the stale anchor's. The drag anchor is recorded here and never
-        changes for the whole drag — extend() gets it explicitly."""
+        """Start (or extend) the selection at the click cell: a single
+        click cancels any selection (selection is drag-driven), a
+        double-click selects the word, a triple-click the line; Alt
+        switches to rectangular mode. The drag anchor is recorded here
+        and never changes for the whole drag — extend() gets it
+        explicitly."""
         self._mouse_dragging = True
         row, col = self._cell_at(event.position())
         rectangular = bool(event.modifiers() & Qt.KeyboardModifier.AltModifier)
         self._press_rectangular = rectangular
-        self._keep_selection = False
-        if (
-            count == 1
-            and not rectangular
-            and self._selection is not None
-            and contains(self._selection, row, col)
-        ):
+        if count == 1:
+            # A bare click selects nothing — it cancels the selection.
+            # The drag anchor is the press cell; the first cell-changing
+            # move then creates the selection (drag-only selection).
+            if self._selection is not None:
+                self._selection = None
+                self._refresh()
             self._press_anchor = (row, col)
-            self._keep_selection = True
             return
         if count >= 3:
             self._selection = line(row, self._columns)
-        elif count == 2:
-            self._selection = word(row, col, self._viewport_rows or [])
         else:
-            self._selection = (
-                point(row, col)
-                if not rectangular
-                else Selection(row, col, row, col, rectangular=True)
-            )
+            self._selection = word(row, col, self._viewport_rows or [])
         # The drag anchor: for word/line selections it's the selection's
-        # start (dragging extends the word/line from its beginning), for
-        # a point click the press cell itself.
+        # start (dragging extends the word/line from its beginning).
         self._press_anchor = (self._selection.row1, self._selection.col1)
         self._refresh()
 
@@ -654,20 +643,10 @@ class TerminalMixin(_QtBase):
             elif self._mouse_1002 and self._mouse_dragging:
                 self._send_mouse(event, "motion", self._mouse_drag_button)
             return
-        if (
-            self._mouse_dragging
-            and self._selection is not None
-            and self._press_anchor is not None
-        ):
+        if self._mouse_dragging and self._press_anchor is not None:
             row, col = self._cell_at(event.position())
-            if self._keep_selection:
-                # A drag that started inside the old selection: re-anchor
-                # at the press cell once the pointer leaves it — the
-                # micro-jitter of a bare click (same-cell moves) must not
-                # collapse the kept selection to a point.
-                if (row, col) == self._press_anchor:
-                    return
-                self._keep_selection = False
+            if (row, col) == self._press_anchor:
+                return  # same-cell jitter: still a click, not a drag
             self._selection = extend(
                 *self._press_anchor, row, col, self._press_rectangular
             )
@@ -685,7 +664,6 @@ class TerminalMixin(_QtBase):
         if event.button() == Qt.MouseButton.LeftButton:
             self._mouse_dragging = False
             self._press_anchor = None
-            self._keep_selection = False
             # A release away from the press is a drag, not a click — the
             # next press must not count as a double-click, so re-dragging
             # the same range backwards stays a fresh drag.
