@@ -26,7 +26,7 @@ Design:
 
 from cpython.unicode cimport PyUnicode_READ_CHAR
 
-from PyQt6.QtCore import QRect
+from PyQt6.QtCore import QRectF
 
 from .render import (
     DEFAULT_BG,
@@ -269,7 +269,7 @@ cpdef void paint_row(painter, renderer, int viewport_row, row, bint reverse_vide
         ((renderer._default_bg.red() << 16) | (renderer._default_bg.green() << 8)
          | renderer._default_bg.blue()),
     )
-    cdef int cw = renderer.cell_w
+    cdef double cw = renderer.cell_w
     cdef int ch = renderer.cell_h
     cdef int y0 = viewport_row * ch
     cdef object color = renderer._color
@@ -289,7 +289,7 @@ cpdef void paint_row(painter, renderer, int viewport_row, row, bint reverse_vide
             ci = run[3]
             sel = run[4]
             painter.fillRect(
-                start * cw, y0, (end - start) * cw, ch,
+                QRectF(start * cw, y0, (end - start) * cw, ch),
                 color(ci, dflt_fg if sel == 1 else dflt_bg),
             )
         elif kind == 1:
@@ -305,16 +305,16 @@ cpdef void paint_row(painter, renderer, int viewport_row, row, bint reverse_vide
             overline = run[9]
             text = run[10]
             fg = color(ci, dflt_fg if sel == 1 else dflt_bg)
-            rect = QRect(start * cw, y0, (end - start) * cw, ch)
+            rect = QRectF(start * cw, y0, (end - start) * cw, ch)
             painter.setFont(font_for(bold, italic))
             painter.setPen(fg)
             painter.drawText(rect, _TEXT_FLAGS, "".join(text))
             if underline:
-                painter.fillRect(rect.left(), rect.bottom() - 1, rect.width(), 1, fg)
+                painter.fillRect(QRectF(rect.left(), rect.bottom() - 1, rect.width(), 1), fg)
             if strike:
-                painter.fillRect(rect.left(), rect.top() + rect.height() // 2, rect.width(), 1, fg)
+                painter.fillRect(QRectF(rect.left(), rect.top() + rect.height() // 2, rect.width(), 1), fg)
             if overline:
-                painter.fillRect(rect.left(), rect.top(), rect.width(), 1, fg)
+                painter.fillRect(QRectF(rect.left(), rect.top(), rect.width(), 1), fg)
         else:
             # Box/block/wide cell: draw individually.
             col = run[1]
@@ -332,7 +332,7 @@ cpdef void paint_row(painter, renderer, int viewport_row, row, bint reverse_vide
             wide = run[13]
             fg = color(ci, dflt_fg if sel == 1 else dflt_bg)
             bg = color(cj, dflt_fg if sel2 == 1 else dflt_bg)
-            rect = QRect(col * cw, y0, cw, ch)
+            rect = QRectF(col * cw, y0, cw, ch)
             if wide:
                 rect.setWidth(2 * cw)
             if 0x2500 <= cp <= 0x257F:  # box-drawing, vector-drawn
@@ -344,8 +344,8 @@ cpdef void paint_row(painter, renderer, int viewport_row, row, bint reverse_vide
                 painter.setPen(fg)
                 painter.drawText(rect, _TEXT_FLAGS, data)
             if underline:
-                painter.fillRect(rect.left(), rect.bottom() - 1, rect.width(), 1, fg)
+                painter.fillRect(QRectF(rect.left(), rect.bottom() - 1, rect.width(), 1), fg)
             if strike:
-                painter.fillRect(rect.left(), rect.top() + rect.height() // 2, rect.width(), 1, fg)
+                painter.fillRect(QRectF(rect.left(), rect.top() + rect.height() // 2, rect.width(), 1), fg)
             if overline:
-                painter.fillRect(rect.left(), rect.top(), rect.width(), 1, fg)
+                painter.fillRect(QRectF(rect.left(), rect.top(), rect.width(), 1), fg)

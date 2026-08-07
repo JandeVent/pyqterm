@@ -53,7 +53,7 @@ def renderer() -> TerminalRenderer:
 @pytest.fixture
 def image(renderer: TerminalRenderer) -> QImage:
     img = QImage(
-        2 * renderer.cell_w,
+        round(2 * renderer.cell_w),
         1 * renderer.cell_h,
         QImage.Format.Format_RGB32,
     )
@@ -64,7 +64,7 @@ def image(renderer: TerminalRenderer) -> QImage:
 def cell_pixel(image: QImage, renderer: TerminalRenderer, col: int, row: int = 0) -> QColor:
     """The pixel at a cell's center (glyphs rarely reach there)."""
     return image.pixelColor(
-        renderer.cell_w * col + renderer.cell_w // 2,
+        round(renderer.cell_w * col + renderer.cell_w / 2),
         renderer.cell_h * row + renderer.cell_h // 2,
     )
 
@@ -73,7 +73,7 @@ def cell_has_color(
     image: QImage, renderer: TerminalRenderer, col: int, color: QColor, row: int = 0
 ) -> bool:
     for y in range(renderer.cell_h * row, renderer.cell_h * (row + 1)):
-        for x in range(renderer.cell_w * col, renderer.cell_w * (col + 1)):
+        for x in range(round(renderer.cell_w * col), round(renderer.cell_w * (col + 1))):
             if image.pixelColor(x, y) == color:
                 return True
     return False
@@ -94,7 +94,7 @@ def cell_has_color_approx(
     tolerance is well below the default-background distance (~220), so
     a plain cell never matches a colored target."""
     for y in range(renderer.cell_h * row, renderer.cell_h * (row + 1)):
-        for x in range(renderer.cell_w * col, renderer.cell_w * (col + 1)):
+        for x in range(round(renderer.cell_w * col), round(renderer.cell_w * (col + 1))):
             p = image.pixelColor(x, y)
             if (
                 abs(p.red() - color.red()) <= tol
@@ -141,7 +141,7 @@ def test_cube_and_grayscale(renderer: TerminalRenderer) -> None:
         make_row(Cell("A", fg=22), blank_cell()),  # cube (0, 1, 0) → (0, 95, 0)
         make_row(Cell("A", fg=232), blank_cell()),  # grayscale: 8
     ]
-    img = QImage(2 * renderer.cell_w, 2 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(2 * renderer.cell_w), 2 * renderer.cell_h, QImage.Format.Format_RGB32)
     renderer.render(img, snapshot(rows))
     assert cell_has_color(img, renderer, 0, QColor(0, 95, 0), row=0)
     assert cell_has_color(img, renderer, 0, QColor(8, 8, 8), row=1)
@@ -182,7 +182,7 @@ def test_bold_bright_applies_after_inversion(renderer: TerminalRenderer, image: 
 def test_wide_char_draws_once_across_two_cells(renderer: TerminalRenderer) -> None:
     """A wide char advances two cells; the empty continuation cell gets
     its background but no glyph (screen.py's "" continuation)."""
-    img = QImage(2 * renderer.cell_w, 1 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(2 * renderer.cell_w), 1 * renderer.cell_h, QImage.Format.Format_RGB32)
     row = make_row(Cell("界", fg=1), Cell(""))  # lead + continuation
     renderer.render(img, snapshot([row]))
     # The glyph spans into the continuation cell: fg pixels in both
@@ -198,7 +198,7 @@ def test_hidden_cell_paints_no_glyph(renderer: TerminalRenderer, image: QImage) 
 
 def test_incremental_snapshot_touches_only_dirty_rows(renderer: TerminalRenderer) -> None:
     before = Row([Cell("X")] + [blank_cell()] * 2)
-    img = QImage(3 * renderer.cell_w, 2 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(3 * renderer.cell_w), 2 * renderer.cell_h, QImage.Format.Format_RGB32)
     renderer.render(
         img,
         snapshot([before, make_row(blank_cell(), blank_cell(), blank_cell())]),
@@ -233,7 +233,7 @@ def test_hidden_cursor_draws_nothing(renderer: TerminalRenderer, image: QImage) 
 
 def test_cursor_paints_at_grid_row_plus_offset(renderer: TerminalRenderer) -> None:
     # Scrolled 2 up: grid row 1 shows at viewport row 1 + 2 = 3.
-    img = QImage(1 * renderer.cell_w, 5 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(1 * renderer.cell_w), 5 * renderer.cell_h, QImage.Format.Format_RGB32)
     img.fill(Qt.GlobalColor.black)
     renderer.render(
         img, snapshot([make_row(blank_cell())] * 5, cursor=(1, 0), viewport_offset=2)
@@ -244,7 +244,7 @@ def test_cursor_paints_at_grid_row_plus_offset(renderer: TerminalRenderer) -> No
 
 def test_cursor_off_viewport_draws_nothing(renderer: TerminalRenderer) -> None:
     # Grid row 4 + offset 2 = viewport row 6, beyond the 5-row viewport.
-    img = QImage(1 * renderer.cell_w, 5 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(1 * renderer.cell_w), 5 * renderer.cell_h, QImage.Format.Format_RGB32)
     img.fill(Qt.GlobalColor.black)
     renderer.render(
         img, snapshot([make_row(blank_cell())] * 5, cursor=(4, 0), viewport_offset=2)
@@ -258,7 +258,7 @@ def test_cursor_gate_uses_viewport_row(renderer: TerminalRenderer) -> None:
     marker = QColor(Qt.GlobalColor.red)
     rows = [make_row(Cell("M")), make_row(blank_cell())]
     snap = snapshot(rows, cursor=(0, 0), viewport_offset=1)
-    img = QImage(1 * renderer.cell_w, 2 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(1 * renderer.cell_w), 2 * renderer.cell_h, QImage.Format.Format_RGB32)
     img.fill(marker)
     painter = QPainter(img)
     try:
@@ -268,7 +268,7 @@ def test_cursor_gate_uses_viewport_row(renderer: TerminalRenderer) -> None:
     assert cell_pixel(img, renderer, 0, 0) == marker  # row 0 untouched
     assert cell_pixel(img, renderer, 0, 1) == DEFAULT_FG  # cursor block at row 1
     # Without row 1 in row_indices the cursor must not paint anywhere.
-    img2 = QImage(1 * renderer.cell_w, 2 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img2 = QImage(round(1 * renderer.cell_w), 2 * renderer.cell_h, QImage.Format.Format_RGB32)
     img2.fill(marker)
     painter = QPainter(img2)
     try:
@@ -334,10 +334,10 @@ def test_set_palette_repaints_blank_cell_with_new_bg(renderer: TerminalRenderer,
 def test_box_drawing_horizontal_line_touches_both_edges(renderer: TerminalRenderer) -> None:
     # ─ (U+2500): a full-width line at mid-height — the font version
     # leaves gaps at the cell edges; drawLine must not.
-    img = QImage(1 * renderer.cell_w, 1 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(1 * renderer.cell_w), 1 * renderer.cell_h, QImage.Format.Format_RGB32)
     renderer.render(img, snapshot([make_row(Cell("─", fg=1))]))
     cy = renderer.cell_h // 2
-    for x in range(renderer.cell_w):
+    for x in range(round(renderer.cell_w)):
         assert img.pixelColor(x, cy) == QColor(0xCD, 0x00, 0x00)
     assert img.pixelColor(0, 0) != QColor(0xCD, 0x00, 0x00)  # nothing above
 
@@ -345,11 +345,11 @@ def test_box_drawing_horizontal_line_touches_both_edges(renderer: TerminalRender
 def test_box_drawing_corner_is_open_on_the_unjoined_side(renderer: TerminalRenderer) -> None:
     # ┌ (U+250C): horizontal reaches the right edge, vertical the bottom;
     # the top and left edges stay open (the neighbor cells join there).
-    img = QImage(1 * renderer.cell_w, 1 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(1 * renderer.cell_w), 1 * renderer.cell_h, QImage.Format.Format_RGB32)
     renderer.render(img, snapshot([make_row(Cell("\u250c", fg=1))]))
-    cx, cy = renderer.cell_w // 2, renderer.cell_h // 2
+    cx, cy = round(renderer.cell_w // 2), renderer.cell_h // 2
     fg = QColor(0xCD, 0x00, 0x00)
-    assert img.pixelColor(renderer.cell_w - 1, cy) == fg
+    assert img.pixelColor(round(renderer.cell_w) - 1, cy) == fg
     assert img.pixelColor(cx, renderer.cell_h - 1) == fg
     assert img.pixelColor(0, cy) != fg  # left open
     assert img.pixelColor(cx, 0) != fg  # top open
@@ -378,15 +378,15 @@ def test_box_drawing_arms_are_orthogonal(renderer: TerminalRenderer) -> None:
     # center (0x6D in the DEC graphics set) — arms must meet the cell
     # edges at right angles, and the open corner must stay empty.
     for cp, arms in _BOX_ARMS.items():
-        img = QImage(1 * renderer.cell_w, 1 * renderer.cell_h, QImage.Format.Format_RGB32)
+        img = QImage(round(1 * renderer.cell_w), 1 * renderer.cell_h, QImage.Format.Format_RGB32)
         renderer.render(img, snapshot([make_row(Cell(chr(cp), fg=1))]))
         fg = QColor(0xCD, 0x00, 0x00)
-        cx, cy = renderer.cell_w // 2, renderer.cell_h // 2
+        cx, cy = round(renderer.cell_w // 2), renderer.cell_h // 2
         probes = {
             "T": (cx, 0),
             "B": (cx, renderer.cell_h - 1),
             "L": (0, cy),
-            "R": (renderer.cell_w - 1, cy),
+            "R": (round(renderer.cell_w) - 1, cy),
         }
         for name, (x, y) in probes.items():
             if name in arms:
@@ -400,32 +400,32 @@ def test_box_drawing_arms_are_orthogonal(renderer: TerminalRenderer) -> None:
 def test_block_half_rows_join_seamlessly(renderer: TerminalRenderer) -> None:
     # ▀▀: two cells — the top halves must tile without a gap between
     # cells (the font version leaves seams at the boundaries).
-    img = QImage(2 * renderer.cell_w, 1 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(2 * renderer.cell_w), 1 * renderer.cell_h, QImage.Format.Format_RGB32)
     renderer.render(img, snapshot([make_row(Cell("▀"), Cell("▀"))]))
-    for x in range(2 * renderer.cell_w):
+    for x in range(round(2 * renderer.cell_w)):
         assert img.pixelColor(x, 0) == DEFAULT_FG
     # The seam between the two cells is seamless.
-    assert img.pixelColor(renderer.cell_w - 1, 0) == DEFAULT_FG
-    assert img.pixelColor(renderer.cell_w, 0) == DEFAULT_FG
+    assert img.pixelColor(round(renderer.cell_w) - 1, 0) == DEFAULT_FG
+    assert img.pixelColor(round(renderer.cell_w), 0) == DEFAULT_FG
     # The bottom of the cell is untouched.
     assert img.pixelColor(0, renderer.cell_h - 1) == DEFAULT_BG
 
 
 def test_block_quadrant_char_fills_only_its_quadrant(renderer: TerminalRenderer) -> None:
     # ▘ (U+2598): only the top-left quadrant is lit.
-    img = QImage(1 * renderer.cell_w, 1 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(1 * renderer.cell_w), 1 * renderer.cell_h, QImage.Format.Format_RGB32)
     renderer.render(img, snapshot([make_row(Cell("\u2598"))]))
     assert img.pixelColor(0, 0) == DEFAULT_FG
-    assert img.pixelColor(renderer.cell_w - 1, 0) == DEFAULT_BG
+    assert img.pixelColor(round(renderer.cell_w) - 1, 0) == DEFAULT_BG
     assert img.pixelColor(0, renderer.cell_h - 1) == DEFAULT_BG
-    assert img.pixelColor(renderer.cell_w - 1, renderer.cell_h - 1) == DEFAULT_BG
+    assert img.pixelColor(round(renderer.cell_w) - 1, renderer.cell_h - 1) == DEFAULT_BG
 
 
 # -- dim / strike / overline / italic (the rest of the SGR set) ----------
 
 
 def test_dim_mixes_foreground_toward_background(renderer: TerminalRenderer) -> None:
-    img = QImage(1 * renderer.cell_w, 1 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(1 * renderer.cell_w), 1 * renderer.cell_h, QImage.Format.Format_RGB32)
     renderer.render(img, snapshot([make_row(Cell("M", dim=True))]))
     # SGR 2: fg = (DEFAULT_FG + DEFAULT_BG) / 2 per channel. The exact
     # color lives in the glyph cores — AA blends only edge pixels.
@@ -434,7 +434,7 @@ def test_dim_mixes_foreground_toward_background(renderer: TerminalRenderer) -> N
 
 
 def test_strike_and_overline_draw_lines(renderer: TerminalRenderer) -> None:
-    img = QImage(1 * renderer.cell_w, 1 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(1 * renderer.cell_w), 1 * renderer.cell_h, QImage.Format.Format_RGB32)
     renderer.render(img, snapshot([make_row(Cell("M", strike=True, overline=True))]))
     assert img.pixelColor(0, renderer.cell_h // 2) == DEFAULT_FG  # strike
     assert img.pixelColor(0, 0) == DEFAULT_FG  # overline
@@ -458,7 +458,7 @@ def test_paint_row_indices_limits_the_repaint(renderer: TerminalRenderer) -> Non
     # one row of paint calls, not the whole frame.
     marker = QColor(Qt.GlobalColor.red)
     rows = [make_row(Cell("M")), make_row(Cell("M"))]
-    img = QImage(1 * renderer.cell_w, 2 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(1 * renderer.cell_w), 2 * renderer.cell_h, QImage.Format.Format_RGB32)
     img.fill(marker)
     painter = QPainter(img)
     try:
@@ -477,7 +477,7 @@ def test_paint_row_indices_gate_the_cursor(renderer: TerminalRenderer) -> None:
     # outside the damaged region without clipping).
     marker = QColor(Qt.GlobalColor.red)
     rows = [make_row(Cell("M")), make_row(Cell("M"))]
-    img = QImage(1 * renderer.cell_w, 2 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(1 * renderer.cell_w), 2 * renderer.cell_h, QImage.Format.Format_RGB32)
     img.fill(marker)
     snap = snapshot(rows, cursor=(1, 0))
     painter = QPainter(img)
@@ -498,7 +498,7 @@ def test_render_row_indices_limit_the_widget_seam(renderer: TerminalRenderer) ->
     # dropped the parameter, so every keypress repainted all rows).
     marker = QColor(Qt.GlobalColor.red)
     rows = [make_row(Cell("M")), make_row(Cell("M"))]
-    img = QImage(1 * renderer.cell_w, 2 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(1 * renderer.cell_w), 2 * renderer.cell_h, QImage.Format.Format_RGB32)
     img.fill(marker)
     renderer.render(img, snapshot(rows), rows=rows, row_indices=[1])
     assert cell_pixel(img, renderer, 0, 0) == marker  # row 0 untouched
@@ -529,13 +529,13 @@ def test_selection_swaps_glyph_color(renderer: TerminalRenderer, image: QImage) 
     assert any(
         image.pixelColor(x, y) == QColor(255, 0, 0)
         for y in range(renderer.cell_h)
-        for x in range(renderer.cell_w)
+        for x in range(round(renderer.cell_w))
     )
 
 
 def test_selection_range_bounds_painting(renderer: TerminalRenderer) -> None:
     # cols 1..2 of row 0 selected: the neighbors keep their own bg.
-    img = QImage(3 * renderer.cell_w, renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(3 * renderer.cell_w), renderer.cell_h, QImage.Format.Format_RGB32)
     img.fill(Qt.GlobalColor.black)
     colored = Cell(" ", fg=rgb(255, 0, 0), bg=rgb(0, 0, 255))
     rows = [make_row(colored, colored, colored)]
@@ -547,7 +547,7 @@ def test_selection_range_bounds_painting(renderer: TerminalRenderer) -> None:
 
 def test_selection_multi_row_open_ends(renderer: TerminalRenderer) -> None:
     # Rows 0-1 selected: row 0 from col 1 to the end, row 1 fully.
-    img = QImage(3 * renderer.cell_w, 2 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(3 * renderer.cell_w), 2 * renderer.cell_h, QImage.Format.Format_RGB32)
     img.fill(Qt.GlobalColor.black)
     colored = Cell(" ", fg=rgb(255, 0, 0), bg=rgb(0, 0, 255))
     rows = [make_row(colored, colored, colored) for _ in range(2)]
@@ -560,7 +560,7 @@ def test_selection_multi_row_open_ends(renderer: TerminalRenderer) -> None:
 def test_selection_rectangular_slices(renderer: TerminalRenderer) -> None:
     # Alt-drag rectangle: col 0 across rows 0-1 — col 1 is never
     # selected on either row.
-    img = QImage(2 * renderer.cell_w, 2 * renderer.cell_h, QImage.Format.Format_RGB32)
+    img = QImage(round(2 * renderer.cell_w), 2 * renderer.cell_h, QImage.Format.Format_RGB32)
     img.fill(Qt.GlobalColor.black)
     colored = Cell(" ", fg=rgb(255, 0, 0), bg=rgb(0, 0, 255))
     rows = [make_row(colored, colored) for _ in range(2)]
@@ -569,3 +569,25 @@ def test_selection_rectangular_slices(renderer: TerminalRenderer) -> None:
     assert cell_pixel(img, renderer, 1, 0) == QColor(0, 0, 255)
     assert cell_pixel(img, renderer, 0, 1) == QColor(255, 0, 0)
     assert cell_pixel(img, renderer, 1, 1) == QColor(0, 0, 255)
+
+
+def test_selection_does_not_shift_glyphs(renderer: TerminalRenderer) -> None:
+    """A selection splits a glyph run at its boundary; the unselected
+    cells must re-render pixel-identically to the selectionless frame.
+    The old int cell_w made the split re-anchor at an integer boundary
+    while drawText laid glyphs out at the font's fractional advance —
+    the glyphs after the boundary shifted (the "text moves when
+    selecting" bug). Float cell_w == the layout advance, so the split
+    runs land exactly where the continuous run did."""
+    n = 20
+    row = make_row(*(Cell("M") for _ in range(n)))
+    img_plain = QImage(round(n * renderer.cell_w), renderer.cell_h, QImage.Format.Format_RGB32)
+    img_sel = QImage(round(n * renderer.cell_w), renderer.cell_h, QImage.Format.Format_RGB32)
+    renderer.render(img_plain, snapshot([row]))
+    renderer.render(img_sel, snapshot([row]), selection=Selection(0, 5, 0, 14))
+    for col in list(range(0, 5)) + list(range(15, n)):
+        for y in range(renderer.cell_h):
+            for x in range(round(renderer.cell_w * col), round(renderer.cell_w * (col + 1))):
+                assert img_sel.pixelColor(x, y) == img_plain.pixelColor(x, y), (
+                    f"cell {col} shifted by the selection at pixel ({x}, {y})"
+                )

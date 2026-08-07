@@ -130,7 +130,7 @@ def htop_incremental(iterations: int = 3) -> dict[str, float]:
     frame damaged."""
     renderer = TerminalRenderer()
     image = QImage(
-        COLUMNS * renderer.cell_w, LINES * renderer.cell_h, QImage.Format.Format_RGB32
+        round(COLUMNS * renderer.cell_w), LINES * renderer.cell_h, QImage.Format.Format_RGB32
     )
     image.fill(DEFAULT_BG)
 

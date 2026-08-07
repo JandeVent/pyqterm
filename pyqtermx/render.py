@@ -21,8 +21,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from PyQt6.QtCore import QRect, QRectF, Qt
-from PyQt6.QtGui import QColor, QFont, QFontDatabase, QFontMetrics, QImage, QPainter
+from PyQt6.QtCore import QPointF, QRect, QRectF, Qt
+from PyQt6.QtGui import QColor, QFont, QFontDatabase, QFontMetrics, QFontMetricsF, QImage, QPainter
 
 from pyqtermx.screen import Cell, Row, is_rgb, rgb_parts
 from pyqtermx.selection import Selection, column_range
@@ -69,7 +69,7 @@ _TEXT_FLAGS = Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft
 #: Box-drawing segment tables as cell-relative half-units — hoisted out
 #: of the per-cell call (a `ls` box row hits these on every cell) while
 #: reproducing the original absolute geometry exactly: a coordinate `u`
-#: maps to `x + u * w // 2` (so 0 → x, 1 → the center, 2 → x + w).
+#: maps to `x + u * w / 2` (so 0 → x, 1 → the center, 2 → x + w).
 _BOX_SEGS = {
     0x2500: ((0, 1, 2, 1),),  # ─
     0x2502: ((1, 0, 1, 2),),  # │
@@ -106,6 +106,7 @@ class TerminalRenderer:
             system = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
             if system.family():
                 font = system
+                font.setPixelSize(12)
             else:
                 font = QFont("Menlo", 12)
         self._font = QFont(font) if font is not None else QFont("Menlo", 12)
@@ -123,9 +124,17 @@ class TerminalRenderer:
     def _apply_font(self, font: QFont | None) -> None:
         """(Re)derive the font, cell metrics, and derived-font cache."""
         self._font = QFont(font) if font is not None else self._font
-        metrics = QFontMetrics(self._font)
-        self.cell_w = metrics.horizontalAdvance("M")
-        self.cell_h = metrics.height()
+        # Float cell width: QFontMetrics.horizontalAdvance returns an int
+        # (rounded), but drawText/QTextLayout position glyphs at the
+        # font's true fractional advance. An int cell_w made the grid
+        # drift from the glyphs (±0.5px/cell, accumulating across the
+        # row) and every run split (selection, rendition change)
+        # re-anchor at an integer boundary, visibly shifting the text.
+        # cell_w == the advance the layout uses, so glyphs land exactly
+        # in their cells. cell_h stays int — vertical centering is
+        # consistent across runs; the drift is purely horizontal.
+        self.cell_w = QFontMetricsF(self._font).horizontalAdvance("M")
+        self.cell_h = QFontMetrics(self._font).height()
         #: Derived fonts by (bold, italic) — a per-cell QFont would be
         #: hundreds of allocations per frame.
         self._font_cache: dict[tuple[bool, bool], QFont] = {}
@@ -205,8 +214,8 @@ class TerminalRenderer:
             self._font_cache[key] = font
         return font
 
-    def cell_rect(self, viewport_row: int, col: int) -> QRect:
-        return QRect(col * self.cell_w, viewport_row * self.cell_h, self.cell_w, self.cell_h)
+    def cell_rect(self, viewport_row: int, col: int) -> QRectF:
+        return QRectF(col * self.cell_w, viewport_row * self.cell_h, self.cell_w, self.cell_h)
 
     def render(
         self,
@@ -344,11 +353,13 @@ class TerminalRenderer:
                 )
             if bg != run_bg:
                 if run_bg is not None:
-                    painter.fillRect(run_start * cw, y0, (col - run_start) * cw, ch, run_bg)
+                    painter.fillRect(
+                        QRectF(run_start * cw, y0, (col - run_start) * cw, ch), run_bg
+                    )
                 run_bg = bg
                 run_start = col
         if run_bg is not None:
-            painter.fillRect(run_start * cw, y0, (n - run_start) * cw, ch, run_bg)
+            painter.fillRect(QRectF(run_start * cw, y0, (n - run_start) * cw, ch), run_bg)
 
         # Pass 2: glyphs — one drawText per run of identical rendition.
         font_for = self._font_for
@@ -366,16 +377,16 @@ class TerminalRenderer:
                 return
             assert run_fg is not None  # a run's fg/font are always set with it
             assert run_font_key is not None
-            rect = QRect(run_start * cw, y0, (end_col - run_start) * cw, ch)
+            rect = QRectF(run_start * cw, y0, (end_col - run_start) * cw, ch)
             painter.setFont(font_for(*run_font_key))
             painter.setPen(run_fg)
             painter.drawText(rect, _TEXT_FLAGS, "".join(run_text))
             if run_underline:
-                painter.fillRect(rect.left(), rect.bottom() - 1, rect.width(), 1, run_fg)
+                painter.fillRect(QRectF(rect.left(), rect.bottom() - 1, rect.width(), 1), run_fg)
             if run_strike:
-                painter.fillRect(rect.left(), rect.top() + rect.height() // 2, rect.width(), 1, run_fg)
+                painter.fillRect(QRectF(rect.left(), rect.top() + rect.height() // 2, rect.width(), 1), run_fg)
             if run_overline:
-                painter.fillRect(rect.left(), rect.top(), rect.width(), 1, run_fg)
+                painter.fillRect(QRectF(rect.left(), rect.top(), rect.width(), 1), run_fg)
             run_text.clear()
             run_fg = None
             run_font_key = None
@@ -408,7 +419,7 @@ class TerminalRenderer:
             if 0x2500 <= cp <= 0x257F or 0x2580 <= cp <= 0x259F or wide:
                 # Box/block/wide chars break the run and draw individually.
                 flush(col)
-                rect = QRect(col * cw, y0, cw, ch)
+                rect = QRectF(col * cw, y0, cw, ch)
                 if wide:
                     # A wide char: one glyph across two cells.
                     rect.setWidth(2 * cw)
@@ -421,11 +432,11 @@ class TerminalRenderer:
                     painter.setPen(fg)
                     painter.drawText(rect, _TEXT_FLAGS, cell.data)
                 if cell.underline:
-                    painter.fillRect(rect.left(), rect.bottom() - 1, rect.width(), 1, fg)
+                    painter.fillRect(QRectF(rect.left(), rect.bottom() - 1, rect.width(), 1), fg)
                 if cell.strike:
-                    painter.fillRect(rect.left(), rect.top() + rect.height() // 2, rect.width(), 1, fg)
+                    painter.fillRect(QRectF(rect.left(), rect.top() + rect.height() // 2, rect.width(), 1), fg)
                 if cell.overline:
-                    painter.fillRect(rect.left(), rect.top(), rect.width(), 1, fg)
+                    painter.fillRect(QRectF(rect.left(), rect.top(), rect.width(), 1), fg)
                 continue
             key = (cell.bold, cell.italic)
             if (
@@ -447,25 +458,28 @@ class TerminalRenderer:
                 run_text.append(cell.data)
         flush(n)
 
-    def _draw_box_drawing(self, painter: QPainter, rect: QRect, cp: int, color: QColor) -> None:
+    def _draw_box_drawing(self, painter: QPainter, rect: QRectF, cp: int, color: QColor) -> None:
         """Box-drawing characters as painter.drawLine/drawArc — never the
         font, whose glyphs leave seams between adjacent cells. Unknown
-        entries fall back to the font."""
+        entries fall back to the font. `rect` is a float cell rect — the
+        lines land at fractional cell boundaries, so adjacent cells join
+        exactly (QPointF: PyQt6's int drawLine overload rejects floats)."""
         painter.setPen(color)
         x, y = rect.left(), rect.top()
         w, h = rect.width(), rect.height()
-        cx, cy = x + w // 2, y + h // 2
+        cx, cy = x + w / 2, y + h / 2
         segs = _BOX_SEGS.get(cp)
         if segs is not None:
             # `u` is a half-unit: 0 → x, 1 → center, 2 → x + w.
             for sx, sy, ex, ey in segs:
                 painter.drawLine(
-                    x + sx * w // 2, y + sy * h // 2, x + ex * w // 2, y + ey * h // 2
+                    QPointF(x + sx * w / 2, y + sy * h / 2),
+                    QPointF(x + ex * w / 2, y + ey * h / 2),
                 )
             return
         # Rounded corners ╭╮╯╰: an arc in the cell center + two legs
         # (rare enough that the tables stay inline here).
-        r = min(w, h) // 4
+        r = min(w, h) / 4
         arcs = {
             0x256D: (0, -90, (cx + r, cy, x + w, cy), (cx, cy + r, cx, y + h)),  # ╭
             0x256E: (180, -90, (x, cy, cx - r, cy), (cx, cy + r, cx, y + h)),  # ╮
@@ -477,13 +491,13 @@ class TerminalRenderer:
             painter.drawArc(
                 QRectF(cx - r, cy - r, 2 * r, 2 * r), a0 * 16, a1 * 16
             )
-            painter.drawLine(*leg1)
-            painter.drawLine(*leg2)
+            painter.drawLine(QPointF(leg1[0], leg1[1]), QPointF(leg1[2], leg1[3]))
+            painter.drawLine(QPointF(leg2[0], leg2[1]), QPointF(leg2[2], leg2[3]))
             return
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, chr(cp))
 
     def _draw_block_char(
-        self, painter: QPainter, rect: QRect, cp: int, fg: QColor, bg: QColor
+        self, painter: QPainter, rect: QRectF, cp: int, fg: QColor, bg: QColor
     ) -> None:
         """Block characters (U+2580–259F) as quadrant fillRects — the
         font version leaves gaps where adjacent cells should join
@@ -491,7 +505,6 @@ class TerminalRenderer:
         x, y = rect.left(), rect.top()
         w, h = rect.width(), rect.height()
         painter.fillRect(rect, bg)  # the unlit quadrants
-        hw, hh = w / 2, h / 2
         fills = _BLOCK_FILLS.get(cp)
         if fills is not None:
             for fx, fy, fw, fh in fills:

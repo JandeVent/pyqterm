@@ -55,7 +55,7 @@ def render_row(
     renderer: TerminalRenderer, snap: Snapshot, sel: Selection | None
 ) -> QImage:
     img = QImage(
-        renderer.cell_w * len(snap.rows[0].cells),
+        round(renderer.cell_w * len(snap.rows[0].cells)),
         renderer.cell_h,
         QImage.Format.Format_RGB32,
     )

@@ -25,7 +25,7 @@ def test_build_window_wires_the_layers(qtbot: QtBot) -> None:
         # The reader thread emits the initial full snapshot; the queued
         # signal delivers it to the widget (ADR-0005 bridge).
         qtbot.waitUntil(lambda: len(session.snapshots) >= 1)
-        assert widget.sizeHint().width() == DEFAULT_COLUMNS * widget._renderer.cell_w  # type: ignore[attr-defined]
+        assert widget.sizeHint().width() == round(DEFAULT_COLUMNS * widget._renderer.cell_w)  # type: ignore[attr-defined]
         assert widget.sizeHint().height() == DEFAULT_LINES * widget._renderer.cell_h  # type: ignore[attr-defined]
     finally:
         session.close()

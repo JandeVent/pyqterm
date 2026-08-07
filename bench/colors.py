@@ -232,7 +232,7 @@ def build_card() -> bytes:
 def sample(image: QImage, renderer: TerminalRenderer, col: int, row: int) -> QColor:
     """The center pixel of cell (col, row) — for █ cells that is the
     foreground fill; for space cells the background fill."""
-    x = col * renderer.cell_w + renderer.cell_w // 2
+    x = round(col * renderer.cell_w + renderer.cell_w / 2)
     y = row * renderer.cell_h + renderer.cell_h // 2
     return QColor(image.pixelColor(x, y))
 
@@ -290,7 +290,7 @@ def render_card() -> QImage:
 
     renderer = TerminalRenderer()
     image = QImage(
-        COLUMNS * renderer.cell_w,
+        round(COLUMNS * renderer.cell_w),
         LINES * renderer.cell_h,
         QImage.Format.Format_RGB32,
     )

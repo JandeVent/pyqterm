@@ -212,7 +212,7 @@ class TerminalMixin(_QtBase):
         whole frame (partial rendering). `full` snapshots repaint the
         whole grid; snapshots with no dirty rows changed nothing
         visible (invisible mode changes) and repaint nothing."""
-        width = self._columns * self._renderer.cell_w
+        width = round(self._columns * self._renderer.cell_w)
         height = self._lines * self._renderer.cell_h
         if snapshot.full:
             return QRect(0, 0, width, height)
@@ -253,7 +253,7 @@ class TerminalMixin(_QtBase):
         self._renderer.set_font(font)
         if self._session is not None:
             lines = max(1, self.height() // self._renderer.cell_h)
-            columns = max(1, self.width() // self._renderer.cell_w)
+            columns = max(1, int(self.width() // self._renderer.cell_w))
             self._lines, self._columns = lines, columns
             self._session.resize(lines, columns)
         self._rebuild_backing()
@@ -351,10 +351,10 @@ class TerminalMixin(_QtBase):
                 row += self._offset  # grid row → viewport row
                 if 0 <= row < self._lines:
                     return QRect(
-                        col * self._renderer.cell_w,
-                        row * self._renderer.cell_h,
-                        self._renderer.cell_w,
-                        self._renderer.cell_h,
+                        round(col * self._renderer.cell_w),
+                        round(row * self._renderer.cell_h),
+                        round(self._renderer.cell_w),
+                        round(self._renderer.cell_h),
                     )
             return QRect(0, 0, 0, 0)
         if query == Qt.InputMethodQuery.ImEnabled:
@@ -476,7 +476,7 @@ class TerminalMixin(_QtBase):
     def _cell_at(self, pos: Any) -> tuple[int, int]:
         """The viewport (row, col) under a widget position, clamped."""
         row = int(pos.y()) // self._renderer.cell_h
-        col = int(pos.x()) // self._renderer.cell_w
+        col = int(int(pos.x()) // self._renderer.cell_w)
         return (
             min(max(row, 0), self._lines - 1),
             min(max(col, 0), self._columns - 1),
@@ -491,7 +491,7 @@ class TerminalMixin(_QtBase):
         if session is None:
             return
         pos = event.position()
-        col = min(max(int(pos.x()) // self._renderer.cell_w + 1, 1), self._columns)
+        col = min(max(int(int(pos.x()) // self._renderer.cell_w + 1), 1), self._columns)
         row = min(max(int(pos.y()) // self._renderer.cell_h + 1, 1), self._lines)
         mods = 0
         m = event.modifiers()
@@ -672,7 +672,7 @@ class TerminalMixin(_QtBase):
         width = max(1, self.width() - extent)
         height = max(1, self.height())
         lines = max(1, height // self._renderer.cell_h)
-        columns = max(1, width // self._renderer.cell_w)
+        columns = max(1, int(width // self._renderer.cell_w))
         if (lines, columns) == (self._lines, self._columns):
             return  # unchanged: no resize to post (spec §7)
         self._lines, self._columns = lines, columns

@@ -12,6 +12,7 @@ events so queued snapshots get applied.
 
 from __future__ import annotations
 
+import math
 import sys
 import time
 from collections.abc import Iterator
@@ -105,7 +106,7 @@ def widget(session: Session, qtbot: QtBot) -> Iterator[TerminalWidget]:
 def test_initial_snapshot_paints_the_viewport(widget: TerminalWidget, session: Session) -> None:
     # set_session re-applies the initial full snapshot: the backing image
     # is 5×10 cells of default background.
-    assert widget._image.size().width() == 10 * widget._renderer.cell_w
+    assert widget._image.size().width() == round(10 * widget._renderer.cell_w)
     assert widget._image.size().height() == 5 * widget._renderer.cell_h
 
 
@@ -135,7 +136,7 @@ def test_output_repaints_pixels(
         return any(
             widget._image.pixelColor(x, y) == DEFAULT_FG
             for y in range(widget._renderer.cell_h)
-            for x in range(widget._renderer.cell_w)
+            for x in range(round(widget._renderer.cell_w))
         )
 
     # waitUntil spins the Qt event loop, delivering the queued snapshot
@@ -204,9 +205,9 @@ def test_ime_cursor_rect_anchors_to_cursor(
 
     rect = widget.inputMethodQuery(Qt.InputMethodQuery.ImCursorRectangle)
     assert rect == QRect(
-        2 * widget._renderer.cell_w,
+        round(2 * widget._renderer.cell_w),
         0 * widget._renderer.cell_h,
-        widget._renderer.cell_w,
+        round(widget._renderer.cell_w),
         widget._renderer.cell_h,
     )
     assert widget.inputMethodQuery(Qt.InputMethodQuery.ImEnabled) is True
@@ -229,9 +230,9 @@ def test_ime_cursor_rect_follows_scrolled_viewport(
     widget._apply_snapshot(snap)
     rect = widget.inputMethodQuery(Qt.InputMethodQuery.ImCursorRectangle)
     assert rect == QRect(
-        2 * widget._renderer.cell_w,
+        round(2 * widget._renderer.cell_w),
         (0 + 2) * widget._renderer.cell_h,
-        widget._renderer.cell_w,
+        round(widget._renderer.cell_w),
         widget._renderer.cell_h,
     )
 
@@ -330,9 +331,10 @@ def test_resize_debounces_pty_winsize(
 ) -> None:
     widget.show()  # resizeEvent only fires on shown widgets
     # The scrollbar extent is always reserved (hidden or not) — the grid
-    # width is (widget width − extent) / cell_w.
+    # width is (widget width − extent) / cell_w. ceil() so the widget is
+    # wide enough for exactly 2 cells (round() can fall short of 2·cell_w).
     widget.resize(
-        2 * widget._renderer.cell_w + widget._scrollbar.sizeHint().width(),
+        math.ceil(2 * widget._renderer.cell_w) + widget._scrollbar.sizeHint().width(),
         3 * widget._renderer.cell_h,
     )
     qtbot.waitUntil(lambda: bool(fake.winsizes))
@@ -360,7 +362,7 @@ def test_scrollbar_appearance_never_clips_the_grid(
 ) -> None:
     widget.show()
     extent = widget._scrollbar.sizeHint().width()
-    widget.resize(3 * widget._renderer.cell_w + extent, 5 * widget._renderer.cell_h)
+    widget.resize(math.ceil(3 * widget._renderer.cell_w) + extent, 5 * widget._renderer.cell_h)
     qtbot.waitUntil(lambda: bool(fake.winsizes))
     assert fake.winsizes[-1] == (5, 3)
     # History appears → the scrollbar shows — but no resize is posted:
@@ -380,10 +382,10 @@ def test_paint_fills_the_area_beyond_the_grid(
     # the bottom/right — it must be the terminal background, not the
     # palette's window color.
     widget.resize(
-        2 * widget._renderer.cell_w + widget._scrollbar.sizeHint().width() + 7,
+        round(2 * widget._renderer.cell_w) + widget._scrollbar.sizeHint().width() + 7,
         2 * widget._renderer.cell_h + 5,
     )
-    qtbot.waitUntil(lambda: widget._image.size().width() == 2 * widget._renderer.cell_w)
+    qtbot.waitUntil(lambda: widget._image.size().width() == round(2 * widget._renderer.cell_w))
     img = widget.grab().toImage()
     assert img.pixelColor(img.width() - 1, img.height() - 1) == DEFAULT_BG
 
@@ -396,21 +398,21 @@ def test_resize_paints_last_state_no_stale_frame(
         lambda: any(
             widget._image.pixelColor(x, y) == DEFAULT_FG
             for y in range(widget._renderer.cell_h)
-            for x in range(widget._renderer.cell_w)
+            for x in range(round(widget._renderer.cell_w))
         )
     )
     widget.show()
     widget.resize(
-        4 * widget._renderer.cell_w + widget._scrollbar.sizeHint().width(),
+        math.ceil(4 * widget._renderer.cell_w) + widget._scrollbar.sizeHint().width(),
         5 * widget._renderer.cell_h,
     )
-    qtbot.waitUntil(lambda: widget._image.size().width() == 4 * widget._renderer.cell_w)
+    qtbot.waitUntil(lambda: widget._image.size().width() == round(4 * widget._renderer.cell_w))
     # The fresh image is repainted from the last snapshot — content is
     # visible immediately, not black until the next full snapshot.
     assert any(
         widget._image.pixelColor(x, y) == DEFAULT_FG
         for y in range(widget._renderer.cell_h)
-        for x in range(widget._renderer.cell_w)
+        for x in range(round(widget._renderer.cell_w))
     )
 
 
@@ -472,7 +474,7 @@ def test_snapshot_repaint_limited_to_dirty_region(
 
 def cell_pos(widget: TerminalWidget, row: int, col: int) -> QPoint:
     r = widget._renderer
-    return QPoint(col * r.cell_w + r.cell_w // 2, row * r.cell_h + r.cell_h // 2)
+    return QPoint(round(col * r.cell_w + r.cell_w / 2), row * r.cell_h + r.cell_h // 2)
 
 
 def mouse_event(
@@ -765,7 +767,9 @@ def test_scrolling_clears_the_selection(
 def cell_color(widget: TerminalWidget, row: int, col: int) -> QColor:
     """The backing-image color at a cell's center."""
     r = widget._renderer
-    return widget._image.pixelColor(col * r.cell_w + r.cell_w // 2, row * r.cell_h + r.cell_h // 2)
+    return widget._image.pixelColor(
+        round(col * r.cell_w + r.cell_w / 2), row * r.cell_h + r.cell_h // 2
+    )
 
 
 def test_output_clears_the_selection(
@@ -891,7 +895,7 @@ def test_protocol_wheel_goes_to_the_app_not_the_viewport(
     enable_mouse(widget, qtbot, "1000;1006")
     c = widget.rect().center()
     # the widget clamps protocol coordinates to the grid — mirror it
-    col = min(c.x() // widget._renderer.cell_w + 1, widget._columns)
+    col = min(int(c.x() // widget._renderer.cell_w + 1), widget._columns)
     row = min(c.y() // widget._renderer.cell_h + 1, widget._lines)
     wheel(widget, 120)
     qtbot.waitUntil(lambda: fake.sent == f"\x1b[<64;{col};{row}M".encode())
@@ -918,7 +922,7 @@ def test_protocol_x10_wheel_uses_buttons_4_and_5(
     # buttons 4/5 (xterm parity), so X10-only apps scroll on it.
     enable_mouse(widget, qtbot, "1000")
     c = widget.rect().center()
-    col = min(c.x() // widget._renderer.cell_w + 1, widget._columns)
+    col = min(int(c.x() // widget._renderer.cell_w + 1), widget._columns)
     row = min(c.y() // widget._renderer.cell_h + 1, widget._lines)
     wheel(widget, 120)
     qtbot.waitUntil(
