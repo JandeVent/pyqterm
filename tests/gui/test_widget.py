@@ -23,6 +23,7 @@ from PyQt6.QtCore import QEvent, QPoint, QPointF, QRect, QSize, Qt
 from PyQt6.QtGui import (
     QClipboard,
     QColor,
+    QFocusEvent,
     QInputMethodEvent,
     QKeyEvent,
     QMouseEvent,
@@ -1154,3 +1155,111 @@ def test_snapshot_rect_limited_to_dirty_rows(widget: TerminalWidget) -> None:
         full=False,
     )
     assert widget._snapshot_rect(mode_only).isEmpty()  # nothing visible changed
+
+
+# -- cursor blink ---------------------------------------------------------
+
+
+def focus(widget: TerminalWidget) -> None:
+    """Give the widget focus via a synthetic FocusIn (the offscreen
+    platform never delivers real focus events) — starts the blink."""
+    QApplication.sendEvent(widget, QFocusEvent(QEvent.Type.FocusIn))
+
+
+def unfocus(widget: TerminalWidget) -> None:
+    QApplication.sendEvent(widget, QFocusEvent(QEvent.Type.FocusOut))
+
+
+def test_cursor_blink_focus_gates_the_timer(widget: TerminalWidget) -> None:
+    """xterm behavior: the cursor blinks only while the widget has
+    focus — the timer runs on FocusIn and stops on FocusOut, freezing
+    the cursor solid."""
+    assert not widget._cursor_blink_timer.isActive()  # unfocused: no blink
+    focus(widget)
+    assert widget._cursor_blink_timer.isActive()
+    assert widget._cursor_blink is True  # solid on focus
+    unfocus(widget)
+    assert not widget._cursor_blink_timer.isActive()
+    assert widget._cursor_blink is True  # frozen solid
+
+
+def test_cursor_blink_timer_toggles_phase(widget: TerminalWidget, qtbot: QtBot) -> None:
+    """Focused: the timer flips the phase at its interval and the block
+    appears/disappears in the backing image (the minimal repaint)."""
+    qtbot.waitUntil(lambda: widget._last_snapshot is not None)  # initial snapshot applied
+    widget._cursor_blink_timer.setInterval(50)  # speed up the test
+    focus(widget)
+    assert widget._cursor_blink is True
+    assert cell_color(widget, 0, 0) == DEFAULT_FG  # block visible
+    qtbot.waitUntil(lambda: widget._cursor_blink is False, timeout=2000)
+    assert cell_color(widget, 0, 0) == DEFAULT_BG  # block hidden
+    qtbot.waitUntil(lambda: widget._cursor_blink is True, timeout=2000)
+    assert cell_color(widget, 0, 0) == DEFAULT_FG  # block back
+
+
+def test_cursor_blink_dectcem_overwrites_phase(
+    widget: TerminalWidget, fake: FakePty, qtbot: QtBot
+) -> None:
+    """DECTCEM ?25 overwrites the blink phase on every snapshot: ?25l
+    forces the cursor hidden (and a blink tick must not resurrect it),
+    ?25h re-anchors it visible — the timer free-runs underneath."""
+    qtbot.waitUntil(lambda: widget._last_snapshot is not None)
+    focus(widget)
+    fake.output(b"\x1b[?25l")  # hide the cursor
+    qtbot.waitUntil(lambda: widget._cursor_blink is False, timeout=2000)
+    assert cell_color(widget, 0, 0) == DEFAULT_BG  # block gone
+    assert widget._cursor_blink_timer.isActive()  # the timer keeps running
+    widget._toggle_cursor_blink()  # a tick flips the phase…
+    assert cell_color(widget, 0, 0) == DEFAULT_BG  # …but the gate keeps it hidden
+    fake.output(b"\x1b[?25h")  # show it
+    qtbot.waitUntil(
+        lambda: widget._last_snapshot is not None and widget._last_snapshot.cursor_visible,
+        timeout=2000,
+    )
+    assert widget._cursor_blink is True  # re-anchored visible
+    assert cell_color(widget, 0, 0) == DEFAULT_FG  # solid again
+
+
+def test_cursor_blink_activity_reset_on_keypress(
+    widget: TerminalWidget, qtbot: QtBot
+) -> None:
+    """Typing snaps the cursor solid immediately — no disorienting
+    mid-hidden-phase cursor under the fingers."""
+    qtbot.waitUntil(lambda: widget._last_snapshot is not None)
+    widget._cursor_blink_timer.setInterval(50)
+    focus(widget)
+    qtbot.waitUntil(lambda: widget._cursor_blink is False, timeout=2000)  # mid-hidden-phase
+    press(widget, Qt.Key.Key_A, text="a")
+    assert widget._cursor_blink is True  # the keypress snapped it solid
+    assert cell_color(widget, 0, 0) == DEFAULT_FG
+
+
+def test_cursor_blink_repaints_only_cursor_row(
+    widget: TerminalWidget, session: Session
+) -> None:
+    """A blink tick re-renders only the cursor row — row 0's pixels
+    survive untouched and the update rect covers exactly one row."""
+    rects: list[QRect] = []
+    widget.update = lambda rect: rects.append(rect)  # type: ignore[method-assign]
+    ch = widget._renderer.cell_h
+    rows = (
+        Row([Cell("M")] + [Cell.blank() for _ in range(session.columns - 1)]),
+        Row([Cell.blank() for _ in range(session.columns)]),
+    )
+    widget._apply_snapshot(
+        Snapshot(
+            dirty_rows=(0, 1),
+            rows=rows,
+            scrollback_len=0,
+            viewport_offset=0,
+            cursor=(1, 0),
+        )
+    )
+    assert cell_color(widget, 1, 0) == DEFAULT_FG  # cursor block on row 1
+    before = [widget._image.pixelColor(x, 0) for x in range(widget._image.width())]
+    widget._cursor_blink = False
+    widget._repaint_cursor()
+    assert cell_color(widget, 1, 0) == DEFAULT_BG  # block hidden
+    after = [widget._image.pixelColor(x, 0) for x in range(widget._image.width())]
+    assert before == after  # row 0 untouched
+    assert rects[-1] == QRect(0, 1 * ch, widget._image.width(), ch)  # one row

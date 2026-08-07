@@ -13,8 +13,9 @@ dim (fg mixed halfway toward bg), underline, strike, overline, hidden
 
 Box-drawing (U+2500–257F) and block characters (U+2580–259F) are drawn
 as vectors — painter.drawLine / fillRect quadrant math — not through the
-font, so adjacent cells join seamlessly. Blink is parsed but not yet
-painted (needs a widget timer).
+font, so adjacent cells join seamlessly. SGR blink is parsed but not yet
+painted (needs a widget timer); the *cursor* blink is the widget's job —
+`paint` takes a `cursor_visible` override the widget's timer drives.
 """
 
 from __future__ import annotations
@@ -224,6 +225,7 @@ class TerminalRenderer:
         rows: Sequence[Row] | None = None,
         row_indices: Sequence[int] | None = None,
         selection: Selection | None = None,
+        cursor_visible: bool | None = None,
     ) -> None:
         """Paint the snapshot's rows into `image` (the CPU path — also
         the test seam: pixel checks read the image). `full` snapshots
@@ -235,7 +237,10 @@ class TerminalRenderer:
         specific viewport rows — partial rendering: the widget
         re-rasterizes only what a snapshot changed, not the whole
         frame. `selection` (viewport coordinates) renders the selected
-        cells reversed.
+        cells reversed. `cursor_visible` overrides the snapshot's
+        DECTCEM visibility for the cursor gate (the widget's blink
+        phase) — `None` keeps the snapshot's value, and the override
+        is ANDed with it, so the app's `?25l`/`?25h` always wins.
 
         A dpr-scaled backing image (Retina: the widget's store is
         `logical × dpr` pixels) is painted in logical coordinates —
@@ -252,6 +257,7 @@ class TerminalRenderer:
                 rows=rows,
                 row_indices=row_indices,
                 selection=selection,
+                cursor_visible=cursor_visible,
             )
         finally:
             painter.end()
@@ -264,6 +270,7 @@ class TerminalRenderer:
         rows: Sequence[Row] | None = None,
         row_indices: Sequence[int] | None = None,
         selection: Selection | None = None,
+        cursor_visible: bool | None = None,
     ) -> None:
         """Paint the snapshot onto an open painter — the widget's
         backing renderer (the CPU path renders into a QImage, then
@@ -276,7 +283,11 @@ class TerminalRenderer:
         frame (and the cursor, when visible and its row is among them).
         `selection` (viewport coordinates) renders the selected cells
         reversed — the None fast path is untouched, so an idle
-        selectionless frame costs nothing."""
+        selectionless frame costs nothing. `cursor_visible` overrides
+        the snapshot's DECTCEM visibility for the cursor gate (the
+        widget's blink phase) — `None` keeps the snapshot's value, and
+        the override is ANDed with it, so the app's `?25l`/`?25h`
+        always wins."""
         if rows is None:
             if snapshot.full:
                 pairs: list[tuple[int, Row]] = list(enumerate(snapshot.rows))
@@ -290,7 +301,12 @@ class TerminalRenderer:
         for viewport_row, row in pairs:
             sel = column_range(selection, viewport_row) if selection is not None else None
             self._paint_row(painter, viewport_row, row, snapshot.reverse_video, sel)
-        if snapshot.cursor_visible and snapshot.cursor[0] >= 0:
+        visible = (
+            snapshot.cursor_visible
+            if cursor_visible is None
+            else snapshot.cursor_visible and cursor_visible
+        )
+        if visible and snapshot.cursor[0] >= 0:
             cursor_row = snapshot.cursor[0] + snapshot.viewport_offset
             if row_indices is None or cursor_row in row_indices:
                 self._paint_cursor(painter, snapshot, viewport_lines)

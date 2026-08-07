@@ -231,6 +231,39 @@ def test_hidden_cursor_draws_nothing(renderer: TerminalRenderer, image: QImage) 
     assert cell_pixel(image, renderer, 0) == DEFAULT_BG  # no block over the default bg
 
 
+def test_cursor_override_hides_visible_snapshot(renderer: TerminalRenderer, image: QImage) -> None:
+    # The widget's blink phase (cursor_visible=False) hides the block
+    # even though the snapshot's DECTCEM says visible.
+    renderer.render(
+        image,
+        snapshot([make_row(blank_cell()), make_row(blank_cell())], cursor=(0, 0)),
+        cursor_visible=False,
+    )
+    assert cell_pixel(image, renderer, 0) == DEFAULT_BG
+
+
+def test_cursor_override_shows_visible_snapshot(renderer: TerminalRenderer, image: QImage) -> None:
+    # The blink phase True keeps the block over a visible snapshot.
+    renderer.render(
+        image,
+        snapshot([make_row(blank_cell()), make_row(blank_cell())], cursor=(0, 0)),
+        cursor_visible=True,
+    )
+    assert cell_pixel(image, renderer, 0) == DEFAULT_FG
+
+
+def test_cursor_override_never_shows_hidden_snapshot(renderer: TerminalRenderer, image: QImage) -> None:
+    # DECTCEM always wins: the override is ANDed with the snapshot's
+    # visibility, so a cursor the app hid (?25l) stays hidden even when
+    # the blink phase is True.
+    renderer.render(
+        image,
+        snapshot([make_row(blank_cell()), make_row(blank_cell())], cursor=(0, 0), cursor_visible=False),
+        cursor_visible=True,
+    )
+    assert cell_pixel(image, renderer, 0) == DEFAULT_BG
+
+
 def test_cursor_paints_at_grid_row_plus_offset(renderer: TerminalRenderer) -> None:
     # Scrolled 2 up: grid row 1 shows at viewport row 1 + 2 = 3.
     img = QImage(round(1 * renderer.cell_w), 5 * renderer.cell_h, QImage.Format.Format_RGB32)

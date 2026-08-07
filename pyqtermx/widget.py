@@ -45,6 +45,7 @@ from typing import TYPE_CHECKING, Any
 from PyQt6.QtCore import QEvent, QPoint, QRect, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QCloseEvent,
+    QFocusEvent,
     QImage,
     QInputMethodEvent,
     QKeyEvent,
@@ -86,6 +87,10 @@ WHEEL_ROWS = 3
 
 #: Resize debounce: wait this long of stable size before resizing the pty.
 RESIZE_DEBOUNCE_MS = 50
+
+#: Cursor blink: toggle the cursor's visibility at this cadence while
+#: the widget has focus (xterm behavior — unfocused cursors stay solid).
+CURSOR_BLINK_MS = 500
 
 #: The default terminal geometry until a resize arrives.
 DEFAULT_LINES = 24
@@ -164,6 +169,17 @@ class TerminalMixin(_QtBase):
         self._resize_timer.setInterval(RESIZE_DEBOUNCE_MS)
         self._resize_timer.timeout.connect(self._apply_resize)
 
+        # Cursor blink: the widget's own phase, toggled at
+        # `CURSOR_BLINK_MS` while focused; the renderer ANDs it with
+        # the snapshot's DECTCEM visibility, so `?25l`/`?25h` always
+        # win and the app can hide the cursor mid-blink. Every snapshot
+        # re-anchors the phase to the DECTCEM value (new output snaps
+        # the cursor solid); keypresses do too.
+        self._cursor_blink = True
+        self._cursor_blink_timer = QTimer(self)
+        self._cursor_blink_timer.setInterval(CURSOR_BLINK_MS)
+        self._cursor_blink_timer.timeout.connect(self._toggle_cursor_blink)
+
         # Input-path mode flags, mirrored from snapshots (spec Q8).
         self._dec_ckm = False
         self._bracketed_paste = False
@@ -204,6 +220,11 @@ class TerminalMixin(_QtBase):
         the backing image — it is the source of truth)."""
         raise NotImplementedError
 
+    def _repaint_cursor(self) -> None:
+        """Backend hook: re-render the cursor row with the current
+        blink phase — the minimal repaint (one row, not the frame)."""
+        raise NotImplementedError
+
     # -- Partial rendering -------------------------------------------------
 
     def _snapshot_rect(self, snapshot: Snapshot) -> QRect:
@@ -233,6 +254,14 @@ class TerminalMixin(_QtBase):
         if not rect.isEmpty():
             self.update(rect)
 
+    def _toggle_cursor_blink(self) -> None:
+        """Blink tick: flip the cursor phase and repaint only the
+        cursor row (partial rendering — the renderer ANDs the phase
+        with the snapshot's DECTCEM visibility, so a cursor the app
+        hid stays hidden)."""
+        self._cursor_blink = not self._cursor_blink
+        self._repaint_cursor()
+
     # -- Session bridge ---------------------------------------------------
 
     def set_session(self, session: Session) -> None:
@@ -244,6 +273,8 @@ class TerminalMixin(_QtBase):
         self._rebuild_backing()
         if session.snapshots:
             self._apply_snapshot(session.snapshots[-1])
+        if self.hasFocus():
+            self._cursor_blink_timer.start()
 
     def set_font(self, font: QFont) -> None:
         """Replace the glyph font, re-derive the grid geometry from the
@@ -282,6 +313,10 @@ class TerminalMixin(_QtBase):
         self._alt_screen = snapshot.alt_screen
         self._scrollback_len = snapshot.scrollback_len
         self._offset = snapshot.viewport_offset
+        # DECTCEM overwrites the blink phase on every snapshot: `?25h`
+        # re-anchors it visible (new output snaps the cursor solid),
+        # `?25l` forces it hidden — the timer free-runs underneath.
+        self._cursor_blink = snapshot.cursor_visible
         self._update_scrollbar()
 
     def _update_scrollbar(self) -> None:
@@ -312,6 +347,10 @@ class TerminalMixin(_QtBase):
         session = self._session
         if session is None:
             return
+        # Activity reset: typing snaps the cursor solid immediately
+        # (the echoed output re-anchors it again via the snapshot).
+        self._cursor_blink = True
+        self._repaint_cursor()
         data = encode_key(
             event,
             dec_ckm=self._dec_ckm,
@@ -654,9 +693,27 @@ class TerminalMixin(_QtBase):
     def closeEvent(self, event: QCloseEvent | None) -> None:
         """Detach from the session before the C++ widget dies — the
         reader thread must never hand snapshots to a deleted widget."""
+        self._cursor_blink_timer.stop()
         if self._session is not None and self._session.snapshot_callback is self._on_session_snapshot:
             self._session.snapshot_callback = None
         super().closeEvent(event)
+
+    def focusInEvent(self, event: QFocusEvent | None) -> None:
+        """Focus starts the blink (xterm: the cursor blinks only while
+        the terminal is focused) — the phase re-anchors solid first, so
+        the cursor appears solid and starts blinking from there."""
+        super().focusInEvent(event)
+        self._cursor_blink = True
+        self._repaint_cursor()
+        self._cursor_blink_timer.start()
+
+    def focusOutEvent(self, event: QFocusEvent | None) -> None:
+        """Unfocused: stop the blink and freeze the cursor solid — no
+        flicker in the background, and the cursor stays findable."""
+        super().focusOutEvent(event)
+        self._cursor_blink_timer.stop()
+        self._cursor_blink = True
+        self._repaint_cursor()
 
     def resizeEvent(self, event: QResizeEvent | None) -> None:
         super().resizeEvent(event)
@@ -721,15 +778,46 @@ class TerminalWidget(TerminalMixin, QWidget):
     def _refresh(self) -> None:
         """Re-render the backing image with the current selection and
         repaint — the image is the source of truth (the blit only
-        copies it), so a selection change must re-render it."""
+        copies it), so a selection change must re-render it. The blink
+        phase rides along (`cursor_visible` override), so a re-render
+        doesn't un-blink a cursor that was mid-hidden-phase."""
         if self._last_snapshot is not None:
             self._renderer.render(
                 self._image,
                 self._last_snapshot,
                 rows=self._viewport_rows,
                 selection=self._selection,
+                cursor_visible=self._cursor_blink,
             )
         self.update()
+
+    def _repaint_cursor(self) -> None:
+        """Re-render only the cursor row with the current blink phase —
+        the minimal repaint: one row's raster, one row's update rect.
+        Off-viewport cursors and app-hidden cursors (DECTCEM `?25l`)
+        draw nothing (and the row stays as it was)."""
+        snapshot = self._last_snapshot
+        if snapshot is None or not snapshot.cursor_visible:
+            return
+        row = snapshot.cursor[0] + snapshot.viewport_offset
+        if not (0 <= row < self._lines):
+            return
+        self._renderer.render(
+            self._image,
+            snapshot,
+            rows=self._viewport_rows,
+            row_indices=(row,),
+            selection=self._selection,
+            cursor_visible=self._cursor_blink,
+        )
+        self.update(
+            QRect(
+                0,
+                row * self._renderer.cell_h,
+                round(self._columns * self._renderer.cell_w),
+                self._renderer.cell_h,
+            )
+        )
 
     def _resize_backing(self) -> None:
         self._rebuild_backing()
