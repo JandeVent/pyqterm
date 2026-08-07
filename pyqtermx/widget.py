@@ -67,7 +67,7 @@ from pyqtermx.input import (
     encode_paste,
     encode_sgr_mouse,
 )
-from pyqtermx.render import TerminalRenderer
+from pyqtermx.render import CURSOR_BLOCK, CURSOR_OUTLINE, TerminalRenderer
 from pyqtermx.screen import Row
 from pyqtermx.selection import Selection, contains, extend, line, point, selected_text, word
 from pyqtermx.session import Session, Snapshot
@@ -179,6 +179,9 @@ class TerminalMixin(_QtBase):
         self._cursor_blink_timer = QTimer(self)
         self._cursor_blink_timer.setInterval(CURSOR_BLINK_MS)
         self._cursor_blink_timer.timeout.connect(self._toggle_cursor_blink)
+        #: The cursor's look: the focused block (inverted character) or
+        #: the unfocused hollow rectangle around the cell.
+        self._cursor_style = CURSOR_BLOCK
 
         # Input-path mode flags, mirrored from snapshots (spec Q8).
         self._dec_ckm = False
@@ -700,19 +703,23 @@ class TerminalMixin(_QtBase):
 
     def focusInEvent(self, event: QFocusEvent | None) -> None:
         """Focus starts the blink (xterm: the cursor blinks only while
-        the terminal is focused) — the phase re-anchors solid first, so
-        the cursor appears solid and starts blinking from there."""
+        the terminal is focused) and restores the block cursor — the
+        phase re-anchors solid first, so the cursor appears solid and
+        starts blinking from there."""
         super().focusInEvent(event)
         self._cursor_blink = True
+        self._cursor_style = CURSOR_BLOCK
         self._repaint_cursor()
         self._cursor_blink_timer.start()
 
     def focusOutEvent(self, event: QFocusEvent | None) -> None:
-        """Unfocused: stop the blink and freeze the cursor solid — no
-        flicker in the background, and the cursor stays findable."""
+        """Unfocused: stop the blink and freeze the cursor as a hollow
+        rectangle around the cell — no flicker in the background, and
+        the character underneath stays visible."""
         super().focusOutEvent(event)
         self._cursor_blink_timer.stop()
         self._cursor_blink = True
+        self._cursor_style = CURSOR_OUTLINE
         self._repaint_cursor()
 
     def resizeEvent(self, event: QResizeEvent | None) -> None:
@@ -788,14 +795,15 @@ class TerminalWidget(TerminalMixin, QWidget):
                 rows=self._viewport_rows,
                 selection=self._selection,
                 cursor_visible=self._cursor_blink,
+                cursor_style=self._cursor_style,
             )
         self.update()
 
     def _repaint_cursor(self) -> None:
-        """Re-render only the cursor row with the current blink phase —
-        the minimal repaint: one row's raster, one row's update rect.
-        Off-viewport cursors and app-hidden cursors (DECTCEM `?25l`)
-        draw nothing (and the row stays as it was)."""
+        """Re-render only the cursor row with the current blink phase
+        and cursor style — the minimal repaint: one row's raster, one
+        row's update rect. Off-viewport cursors and app-hidden cursors
+        (DECTCEM `?25l`) draw nothing (and the row stays as it was)."""
         snapshot = self._last_snapshot
         if snapshot is None or not snapshot.cursor_visible:
             return
@@ -809,6 +817,7 @@ class TerminalWidget(TerminalMixin, QWidget):
             row_indices=(row,),
             selection=self._selection,
             cursor_visible=self._cursor_blink,
+            cursor_style=self._cursor_style,
         )
         self.update(
             QRect(
@@ -825,7 +834,9 @@ class TerminalWidget(TerminalMixin, QWidget):
             # Best-effort repaint of the last state — no stale frame at
             # the old grid size while the reader resizes (the next
             # snapshot is full and replaces this).
-            self._renderer.render(self._image, self._last_snapshot)
+            self._renderer.render(
+                self._image, self._last_snapshot, cursor_style=self._cursor_style
+            )
 
     def _apply_snapshot(self, snapshot: Snapshot) -> None:
         """GUI thread: merge into the viewport rows, repaint, mirror
@@ -851,6 +862,7 @@ class TerminalWidget(TerminalMixin, QWidget):
             rows=self._viewport_rows,
             row_indices=None if snapshot.full else snapshot.dirty_rows,
             selection=self._selection,
+            cursor_style=self._cursor_style,
         )
         self._mirror_flags(snapshot)
         self._request_repaint(snapshot)
@@ -871,7 +883,9 @@ class TerminalWidget(TerminalMixin, QWidget):
         if event is not None and event.type() == QEvent.Type.DevicePixelRatioChange:
             self._rebuild_backing()
             if self._last_snapshot is not None:
-                self._renderer.render(self._image, self._last_snapshot)
+                self._renderer.render(
+                    self._image, self._last_snapshot, cursor_style=self._cursor_style
+                )
             self.update()
 
     # -- Painting ----------------------------------------------------------
@@ -888,7 +902,9 @@ class TerminalWidget(TerminalMixin, QWidget):
         if self._image.devicePixelRatio() != self.devicePixelRatioF():
             self._rebuild_backing()
             if self._last_snapshot is not None:
-                self._renderer.render(self._image, self._last_snapshot)
+                self._renderer.render(
+                    self._image, self._last_snapshot, cursor_style=self._cursor_style
+                )
         # Blit only the damaged region — the source rect is in the
         # image's device pixels, the target in logical coordinates, so
         # Qt maps 1:1 physical pixels (partial rendering).

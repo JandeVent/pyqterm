@@ -1302,3 +1302,54 @@ def test_cursor_blink_inverts_character_under_it(
     widget._cursor_blink = False
     widget._repaint_cursor()
     assert count(QColor(0, 0, 255)) > count(QColor(255, 0, 0))  # plain: bg block
+
+
+def test_cursor_outline_when_unfocused(
+    widget: TerminalWidget, session: Session
+) -> None:
+    """Unfocused: the cursor becomes a hollow rectangle around the cell
+    — the character underneath stays visible (no block, no inversion);
+    refocusing restores the block. The dominant color flips: red (the
+    fg block) while focused, blue (the bg) once unfocused."""
+    red = rgb(255, 0, 0)
+    blue = rgb(0, 0, 255)
+    rows = (
+        Row([Cell("X", fg=red, bg=blue)] + [Cell.blank() for _ in range(session.columns - 1)]),
+        Row([Cell.blank() for _ in range(session.columns)]),
+    )
+    widget._apply_snapshot(
+        Snapshot(
+            dirty_rows=(0, 1),
+            rows=rows,
+            scrollback_len=0,
+            viewport_offset=0,
+            cursor=(0, 0),
+        )
+    )
+
+    def count(color: QColor) -> int:
+        r = widget._renderer
+        n = 0
+        for y in range(r.cell_h):
+            for x in range(round(r.cell_w)):
+                if widget._image.pixelColor(x, y) == color:
+                    n += 1
+        return n
+
+    focus(widget)
+    assert widget._cursor_style == "block"
+    assert count(QColor(255, 0, 0)) > count(QColor(0, 0, 255))  # inverted: fg block
+
+    unfocus(widget)
+    assert widget._cursor_style == "outline"
+    assert count(QColor(0, 0, 255)) > count(QColor(255, 0, 0))  # plain: bg block
+    r = widget._renderer
+    assert any(
+        widget._image.pixelColor(x, y) == DEFAULT_FG
+        for y in range(r.cell_h)
+        for x in range(round(r.cell_w))
+    )  # the outline is drawn
+
+    focus(widget)
+    assert widget._cursor_style == "block"
+    assert count(QColor(255, 0, 0)) > count(QColor(0, 0, 255))  # inverted again

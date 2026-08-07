@@ -244,6 +244,37 @@ def test_cursor_inverts_default_character(renderer: TerminalRenderer) -> None:
     assert cell_has_color(img, renderer, 0, DEFAULT_BG)  # the glyph
 
 
+def test_cursor_outline_leaves_character_visible(renderer: TerminalRenderer) -> None:
+    # The unfocused cursor (CURSOR_OUTLINE): a hollow rectangle around
+    # the cell — the character underneath stays visible, no block, no
+    # inversion.
+    img = QImage(round(1 * renderer.cell_w), renderer.cell_h, QImage.Format.Format_RGB32)
+    img.fill(Qt.GlobalColor.black)
+    cell = Cell("X", fg=rgb(255, 0, 0), bg=rgb(0, 0, 255))
+    renderer.render(
+        img,
+        snapshot([make_row(cell)], cursor=(0, 0)),
+        rows=[make_row(cell)],
+        cursor_style="outline",
+    )
+    assert cell_has_color(img, renderer, 0, QColor(255, 0, 0))  # the glyph
+    assert cell_has_color(img, renderer, 0, QColor(0, 0, 255))  # the background
+    assert cell_has_color(img, renderer, 0, DEFAULT_FG)  # the outline
+    assert cell_pixel(img, renderer, 0) != DEFAULT_FG  # no block at the center
+
+
+def test_cursor_outline_on_blank_cell(renderer: TerminalRenderer, image: QImage) -> None:
+    # An empty cell keeps the character-free rectangle: the outline is
+    # drawn, the center stays the background.
+    renderer.render(
+        image,
+        snapshot([make_row(blank_cell()), make_row(blank_cell())], cursor=(0, 0)),
+        cursor_style="outline",
+    )
+    assert cell_has_color(image, renderer, 0, DEFAULT_FG)  # the outline
+    assert cell_pixel(image, renderer, 0) == DEFAULT_BG  # center not filled
+
+
 def test_hidden_cursor_draws_nothing(renderer: TerminalRenderer, image: QImage) -> None:
     # DECTCEM ?25l (cursor_visible=False): the block must not paint —
     # the donut demo hides the cursor while animating.

@@ -67,6 +67,12 @@ _BLOCK_FILLS: dict[int, tuple[tuple[float, float, float, float], ...]] = {
 #: was ~0.65 s of the htop profile (enum.__or__ per cell).
 _TEXT_FLAGS = Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft
 
+#: Cursor styles: the focused block (inverted character / solid block)
+#: and the unfocused hollow — a rectangle around the cell that leaves
+#: the character underneath visible.
+CURSOR_BLOCK = "block"
+CURSOR_OUTLINE = "outline"
+
 #: Box-drawing segment tables as cell-relative half-units — hoisted out
 #: of the per-cell call (a `ls` box row hits these on every cell) while
 #: reproducing the original absolute geometry exactly: a coordinate `u`
@@ -226,6 +232,7 @@ class TerminalRenderer:
         row_indices: Sequence[int] | None = None,
         selection: Selection | None = None,
         cursor_visible: bool | None = None,
+        cursor_style: str = CURSOR_BLOCK,
     ) -> None:
         """Paint the snapshot's rows into `image` (the CPU path — also
         the test seam: pixel checks read the image). `full` snapshots
@@ -241,6 +248,9 @@ class TerminalRenderer:
         DECTCEM visibility for the cursor gate (the widget's blink
         phase) — `None` keeps the snapshot's value, and the override
         is ANDed with it, so the app's `?25l`/`?25h` always wins.
+        `cursor_style` picks the cursor's look: `CURSOR_BLOCK` (the
+        focused inverted block) or `CURSOR_OUTLINE` (the unfocused
+        hollow rectangle).
 
         A dpr-scaled backing image (Retina: the widget's store is
         `logical × dpr` pixels) is painted in logical coordinates —
@@ -258,6 +268,7 @@ class TerminalRenderer:
                 row_indices=row_indices,
                 selection=selection,
                 cursor_visible=cursor_visible,
+                cursor_style=cursor_style,
             )
         finally:
             painter.end()
@@ -271,6 +282,7 @@ class TerminalRenderer:
         row_indices: Sequence[int] | None = None,
         selection: Selection | None = None,
         cursor_visible: bool | None = None,
+        cursor_style: str = CURSOR_BLOCK,
     ) -> None:
         """Paint the snapshot onto an open painter — the widget's
         backing renderer (the CPU path renders into a QImage, then
@@ -287,7 +299,9 @@ class TerminalRenderer:
         the snapshot's DECTCEM visibility for the cursor gate (the
         widget's blink phase) — `None` keeps the snapshot's value, and
         the override is ANDed with it, so the app's `?25l`/`?25h`
-        always wins."""
+        always wins. `cursor_style` picks the cursor's look:
+        `CURSOR_BLOCK` (the focused inverted block) or `CURSOR_OUTLINE`
+        (the unfocused hollow rectangle)."""
         if rows is None:
             if snapshot.full:
                 pairs: list[tuple[int, Row]] = list(enumerate(snapshot.rows))
@@ -317,6 +331,7 @@ class TerminalRenderer:
                     sel_range=(
                         column_range(selection, cursor_row) if selection is not None else None
                     ),
+                    cursor_style=cursor_style,
                 )
 
     # -- painting --------------------------------------------------------
@@ -543,16 +558,20 @@ class TerminalRenderer:
         viewport_lines: int,
         rows: Sequence[Row] | None = None,
         sel_range: tuple[int, int] | None = None,
+        cursor_style: str = CURSOR_BLOCK,
     ) -> None:
-        """The cursor as a reverse block at its viewport position (grid
-        row plus the scroll offset — the viewport shows history rows
-        above the grid); off-viewport cursors draw nothing. A character
-        under the cursor renders inverted — the block is the cell's
-        foreground, the glyph its background — so the cursor never
-        hides the text it sits on (xterm); an empty cell keeps the
-        solid block. `rows` (the merged viewport) supplies the cell;
-        `sel_range` is the selection's column range on the cursor row,
-        so a selected cell's swap is undone before the inversion."""
+        """The cursor at its viewport position (grid row plus the
+        scroll offset — the viewport shows history rows above the
+        grid); off-viewport cursors draw nothing. `CURSOR_BLOCK` (the
+        focused cursor): a character under it renders inverted — the
+        block is the cell's foreground, the glyph its background — so
+        the cursor never hides the text it sits on (xterm); an empty
+        cell keeps the solid block. `CURSOR_OUTLINE` (the unfocused
+        cursor): a hollow rectangle around the cell — the character
+        underneath stays visible, no block at all. `rows` (the merged
+        viewport) supplies the cell; `sel_range` is the selection's
+        column range on the cursor row, so a selected cell's swap is
+        undone before the inversion."""
         y, x = snapshot.cursor
         viewport_row = y + snapshot.viewport_offset
         if not (0 <= viewport_row < viewport_lines):
@@ -564,6 +583,16 @@ class TerminalRenderer:
         elif rows is None and snapshot.full and viewport_row < len(snapshot.rows):
             row_cells = snapshot.rows[viewport_row].cells
         cell = row_cells[x] if row_cells is not None and x < len(row_cells) else None
+        if cursor_style == CURSOR_OUTLINE:
+            # The unfocused cursor: a hollow rectangle around the cell —
+            # the character (or empty background) underneath stays
+            # visible. A wide char's continuation widens the rect.
+            if row_cells is not None and x + 1 < len(row_cells) and row_cells[x + 1].data == "":
+                rect.setWidth(2 * self.cell_w)
+            painter.setPen(self._default_fg)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRect(rect)
+            return
         if cell is None or cell.hidden or cell.data == "":
             # Empty (or unavailable) cell: the solid block.
             painter.fillRect(rect, self._default_fg)
