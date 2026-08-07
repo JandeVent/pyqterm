@@ -1,5 +1,12 @@
 # Agent instructions
 
+## Repo context
+
+- `README.md` — feature overview, quick start, architecture, project layout
+- `ROADMAP.md` — phase-by-phase implementation plan and current status
+- `docs/adr/` — architectural decision records (0001–0007)
+- `docs/agents/` — agent workflow docs (triage labels, domain, issue tracker)
+
 ## Agent skills
 
 ### Triage labels

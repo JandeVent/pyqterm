@@ -69,11 +69,11 @@ Complete: 441 tests green, milestone fixture t0081-vim-session passing.
 
 **Milestone: a scripted vim-style session renders headlessly, deterministically** (a hand-built 80×25 fixture in the conformance corpus).
 
-### Phase 4 — PTY + scrollback + GUI (was Steps 10–11) 🚧 in progress
+### Phase 4 — PTY + scrollback + GUI (was Steps 10–11) ✅ done
 The point where the pipeline becomes a terminal. Scrollback moves here from the old Step 4 — it is invisible until a GUI exists, and it needs the wrapped-row flag from Phase 2. Design locked in the grilling session (ADR-0005, ADR-0006).
 
-- **Slice A (headless)**: `pyqtermx/pty.py` — fork + setsid, Qt-free `Pty` interface; a reader thread as the **single writer** (command queue for send/resize/scroll/close, snapshot signals — ADR-0005); scrollback on the screen: history rows above the grid, one-stream reflow, xterm retention (full-screen scroll only, bounded 1000, alt excluded), ED3, viewport API (ADR-0006). Tested with fake child programs in pytest.
-- **Slice B (PyQt6)**: custom QPainter `TerminalView` (cell metrics, wide/combining chars, inverse block cursor), dirty-line snapshot repaint, bold-as-bright (ADR-0004 §9); `encode_key` input path (DECCKM `?1`, bracketed paste `?2004`, modifier encoding, PgUp/PgDn viewport policy); debounced resize → reflow → TIOCSWINSZ; QScrollBar; single-window app shell, `$SHELL` + `TERM=xterm-256color`, SIGTERM + waitpid on close.
+- **Slice A (headless)**: `pyqtermx/ptyspawn.py` — fork + setsid, Qt-free `Pty` interface (optional `cwd` spawns the child in a working directory); a reader thread as the **single writer** (command queue for send/resize/scroll/close, snapshot signals — ADR-0005); scrollback on the screen: history rows above the grid, one-stream reflow, xterm retention (full-screen scroll only, bounded 1000, alt excluded), ED3, viewport API (ADR-0006). Tested with fake child programs in pytest.
+- **Slice B (PyQt6)**: custom QPainter `TerminalWidget` (cell metrics, wide/combining chars, fractional-width grid alignment), dirty-line snapshot repaint, bold-as-bright (ADR-0004 §9); cursor that blinks at 500 ms while focused, inverts the cell it sits on, and becomes a hollow outline when the widget loses focus; `encode_key` input path (DECCKM `?1`, bracketed paste `?2004`, modifier encoding, PgUp/PgDn viewport policy); debounced resize → reflow → TIOCSWINSZ; QScrollBar; single-window app shell, `$SHELL` + `TERM=xterm-256color`, SIGTERM + waitpid on close (guarded by a `tcgetpgrp` foreground-job check); `set_font`/`set_palette` theming.
 
 Reference: xterm.js ships no renderer sources.
 **Milestone:** a real shell you can type into.

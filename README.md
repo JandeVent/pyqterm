@@ -64,6 +64,15 @@ info panel and the block-letter banner and box frame drawn as vectors
   glyphs; bold-as-bright applied at render time.
 - Box-drawing and block characters drawn as vectors, so adjacent cells
   join seamlessly — no font seams in `htop` or `tmux`.
+- Glyphs aligned to the grid at fractional cell width
+  (`QFontMetricsF`), so text and vector cells never drift.
+- Cursor: a 500 ms blinking block that **inverts the cell it sits on**
+  (the glyph stays visible, xterm-style); when the widget loses focus
+  it becomes a hollow rectangle outline. The blink is gated on focus,
+  and the snapshot's DECTCEM (`?25`) visibility always wins.
+- Theming: `set_font()` / `set_palette()` on both the renderer and the
+  widget rebuild the backing and re-render the last snapshot — no
+  hardcoded defaults.
 
 **Input**
 
@@ -83,6 +92,11 @@ info panel and the block-letter banner and box frame drawn as vectors
   foreground process group, `TERM=xterm-256color` and `COLUMNS`/`LINES`
   forced for the child, `TIOCSWINSZ` resize propagation, graceful
   close (EOF → SIGTERM → SIGKILL with bounded waits).
+- Spawn in a working directory: `Pty(cwd=...)` chdirs the child before
+  exec, so a session can start in a requested folder.
+- Foreground-job close guard: `Pty.has_foreground_job()` (via
+  `tcgetpgrp`) tells the widget whether a job owns the terminal, so
+  closing the window doesn't kill a running foreground process.
 - **Single-writer threading** (ADR-0005): one reader thread owns the
   parser and screen; the GUI never touches the model. All mutations
   flow through a command queue; state changes cross the thread
@@ -111,9 +125,9 @@ python bench/run.py --compare  # % change vs the stored baseline
 ## Requirements
 
 - Python ≥ 3.11
-- [PyQt6](https://pypi.org/project/PyQt6/) — imported at runtime
-  (install it alongside; the project itself depends on `wcwidth` for
-  cell-width measurement)
+- [PyQt6](https://pypi.org/project/PyQt6/) — declared project dependency
+  (ships prebuilt wheels for macOS, Windows, and Linux)
+- `wcwidth` — declared dependency for cell-width measurement
 - A POSIX platform (developed on macOS; the PTY layer carries Linux
   fallbacks)
 
@@ -207,9 +221,10 @@ python bench/run.py         # perf harness (see bench/results/baseline.json)
   fixture corpus (`references/xterm.js/`) as the conformance
   oracle — the `.in`/`.text` pairs captured from real xterm feed through
   the full pipeline and diff against `render()`.
-- **Design decisions** live in `docs/adr/` (0001–0006): code-point
+- **Design decisions** live in `docs/adr/` (0001–0007): code-point
   parsing, the full-state parser skeleton, reflow-on-resize, alt screen
-  and color, single-writer threading, scrollback retention.
+  and color, single-writer threading, scrollback retention, Windows
+  ConPTY backend.
 
 ## Further reading
 

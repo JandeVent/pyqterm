@@ -19,7 +19,11 @@ Single-context repo:
 ├── docs/adr/
 │   ├── 0001-code-point-parser.md
 │   ├── 0002-full-state-skeleton.md
-│   └── 0003-reflow-on-resize.md
+│   ├── 0003-reflow-on-resize.md
+│   ├── 0004-alt-screen-and-color.md
+│   ├── 0005-single-writer-threading.md
+│   ├── 0006-scrollback-retention.md
+│   └── 0007-windows-conpty-backend.md
 └── pyqtermx/
 ```
 
