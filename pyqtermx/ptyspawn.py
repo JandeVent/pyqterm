@@ -112,6 +112,10 @@ class Pty:
                 os._exit(127)
         os.close(slave_fd)
         self.pid = pid
+        # The child setsid()s, so it is its own session leader and
+        # process-group leader: pid == pgid == sid. `self.pid` is
+        # therefore the shell's process-group id — job control
+        # compares the terminal's foreground group against it.
 
     # -- Read API --------------------------------------------------------
 
@@ -185,6 +189,29 @@ class Pty:
             return True
         self._exit_status = os.waitstatus_to_exitcode(status)
         return False
+
+    def has_foreground_job(self) -> bool:
+        """Whether a foreground job currently owns the terminal.
+
+        The shell is its own process-group leader (setsid + tcsetpgrp
+        at spawn); while it sits idle at the prompt the foreground
+        process group is the shell's own group. When the user runs a
+        job (a build, an editor, a pipeline, a long-running task) the
+        shell foregrounds it via tcsetpgrp, so the foreground group
+        differs from the shell's group. This is the signal a terminal
+        uses to decide whether closing would kill real work —
+        `is_running()` alone is True even at an idle prompt.
+
+        Note: a stopped job (Ctrl-Z) returns the foreground group to
+        the shell, so this reports False for stopped jobs — a full
+        job-table check would need the shell's job state."""
+        if not self.is_running():
+            return False
+        try:
+            foreground_pgid = os.tcgetpgrp(self._master_fd)
+        except (OSError, ValueError):
+            return False
+        return foreground_pgid != self.pid
 
     def wait(self) -> int | None:
         """Reap the child (WNOHANG): its exit status, or None while it

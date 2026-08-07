@@ -199,6 +199,49 @@ def test_close_terminates_a_still_running_child() -> None:
     assert not pty.is_running()
 
 
+def test_has_foreground_job_false_at_idle_prompt() -> None:
+    """A shell sitting at the prompt has no foreground job — closing
+    the tab should not prompt (xCode's close-confirmation rule)."""
+    pty = spawn_child(
+        "import os, sys\n"
+        "print('IDLE', flush=True)\n"
+        "sys.stdin.readline()\n"
+        "print('DONE', flush=True)\n"
+    )
+    try:
+        read_until(pty, b"IDLE")
+        assert pty.has_foreground_job() is False
+    finally:
+        pty.close()
+
+
+def test_has_foreground_job_true_while_job_runs() -> None:
+    """A foreground job (the shell foregrounds a child via tcsetpgrp)
+    is detected — closing the tab should prompt."""
+    pty = spawn_child(
+        "import os, sys, time\n"
+        "print('IDLE', flush=True)\n"
+        "sys.stdin.readline()\n"
+        "pid = os.fork()\n"
+        "if pid == 0:\n"
+        "    os.setpgid(0, 0)\n"
+        "    time.sleep(30)\n"
+        "    os._exit(0)\n"
+        "os.setpgid(pid, pid)\n"
+        "os.tcsetpgrp(0, pid)\n"  # the shell foregrounds the job
+        "os.waitpid(pid, 0)\n"
+        "print('DONE', flush=True)\n"
+    )
+    try:
+        read_until(pty, b"IDLE")
+        assert pty.has_foreground_job() is False
+        pty.send_data(b"go\n")
+        # the shell foregrounds the job — now detectable
+        assert wait_for(lambda: pty.has_foreground_job())
+    finally:
+        pty.close()
+
+
 def test_close_sigkills_a_stubborn_child() -> None:
     # The child ignores EOF/SIGHUP/SIGTERM — only the SIGKILL fallback
     # can stop it (bounded waits, so the test stays fast).
