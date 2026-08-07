@@ -83,6 +83,9 @@ info panel and the block-letter banner and box frame drawn as vectors
 - Bracketed paste (`?2004`), clipboard paste via Ctrl+Shift+V /
   Shift+Insert, IME (Chinese/Japanese/…) with a cursor-anchored
   candidate window.
+- Mouse: drag selects, double-click selects a word, triple-click a
+  line, Alt-drag a rectangle — a single click cancels any selection;
+  ⌘+C (macOS) / Ctrl+Shift+C copies, middle-click pastes.
 - Signals flow through the tty line discipline: Ctrl+C/Z/\ deliver real
   SIGINT/SIGTSTP/SIGQUIT — the child gets a controlling terminal.
 
