@@ -275,6 +275,43 @@ def test_cursor_outline_on_blank_cell(renderer: TerminalRenderer, image: QImage)
     assert cell_pixel(image, renderer, 0) == DEFAULT_BG  # center not filled
 
 
+def test_cursor_block_fills_the_cell_corners(renderer: TerminalRenderer, image: QImage) -> None:
+    # The focused block cursor fills the whole cell — the outline's
+    # half-pixel inset must not leak into the block path (a thin
+    # background-colored border around the block).
+    renderer.render(
+        image,
+        snapshot([make_row(blank_cell()), make_row(blank_cell())], cursor=(0, 0)),
+        cursor_style="block",
+    )
+    r = renderer
+    for x, y in (
+        (0, 0),
+        (round(r.cell_w) - 1, 0),
+        (0, r.cell_h - 1),
+        (round(r.cell_w) - 1, r.cell_h - 1),
+    ):
+        assert image.pixelColor(x, y) == DEFAULT_FG
+
+
+def test_cursor_outline_stays_inside_the_cell(renderer: TerminalRenderer) -> None:
+    # The unfocused outline must not bleed into the row below — a
+    # drawRect pen is centered on the rect boundary, so an uninset rect
+    # leaves a ~0.5px line in the next row, which the row-only repaint
+    # never clears (the lingering top/bottom line).
+    r = renderer
+    img = QImage(round(1 * r.cell_w), 2 * r.cell_h, QImage.Format.Format_RGB32)
+    img.fill(Qt.GlobalColor.black)
+    renderer.render(
+        img,
+        snapshot([make_row(blank_cell()), make_row(blank_cell())], cursor=(0, 0)),
+        cursor_style="outline",
+    )
+    for y in range(r.cell_h, 2 * r.cell_h):
+        for x in range(round(r.cell_w)):
+            assert img.pixelColor(x, y) == DEFAULT_BG
+
+
 def test_hidden_cursor_draws_nothing(renderer: TerminalRenderer, image: QImage) -> None:
     # DECTCEM ?25l (cursor_visible=False): the block must not paint —
     # the donut demo hides the cursor while animating.

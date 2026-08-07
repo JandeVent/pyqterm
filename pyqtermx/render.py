@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from PyQt6.QtCore import QPointF, QRect, QRectF, Qt
+from PyQt6.QtCore import QPointF, QRect, QRectF, Qt, QMarginsF
 from PyQt6.QtGui import QColor, QFont, QFontDatabase, QFontMetrics, QFontMetricsF, QImage, QPainter
 
 from pyqtermx.screen import Cell, Row, is_rgb, rgb_parts
@@ -586,9 +586,15 @@ class TerminalRenderer:
         if cursor_style == CURSOR_OUTLINE:
             # The unfocused cursor: a hollow rectangle around the cell —
             # the character (or empty background) underneath stays
-            # visible. A wide char's continuation widens the rect.
+            # visible. A wide char's continuation widens the rect. The
+            # rect is inset by half a line width: drawRect centers a 1px
+            # pen on the rect boundary, so an uninset rect bleeds ~0.5px
+            # into the adjacent rows — which the row-only repaint never
+            # clears (the lingering top/bottom line).
+            rect = self.cell_rect(viewport_row, x)
             if row_cells is not None and x + 1 < len(row_cells) and row_cells[x + 1].data == "":
                 rect.setWidth(2 * self.cell_w)
+            rect = rect.marginsRemoved(QMarginsF(0.5, 0.5, 0.5, 0.5))
             painter.setPen(self._default_fg)
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawRect(rect)
